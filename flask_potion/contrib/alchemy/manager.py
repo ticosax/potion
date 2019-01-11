@@ -232,10 +232,7 @@ class SQLAlchemyManager(RelationalManager):
 
     def create(self, properties, commit=True):
         # noinspection properties
-        item = self.model()
-
-        for key, value in properties.items():
-            setattr(item, key, value)
+        item = self.model(**properties)
 
         before_create.send(self.resource, item=item)
 
