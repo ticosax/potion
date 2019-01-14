@@ -1,3 +1,4 @@
+import unittest
 from unittest import TestCase
 from flask import Flask, request, Request
 from flask_potion import fields, Resource
@@ -84,19 +85,22 @@ class SchemaTestCase(TestCase):
                                  'status': 400
                              }, cx.exception.as_dict())
 
-
+    @unittest.SkipTest
     def test_schema_class_parse_request(self):
         pass
 
+    @unittest.SkipTest
     def test_schema_class_format_response(self):
         pass
 
+    @unittest.SkipTest
     def test_fieldset_schema(self):
         pass
 
     def test_fieldset_rebind(self):
         class FooResource(Resource):
             pass
+
         class BarResource(Resource):
             pass
 
@@ -169,5 +173,6 @@ class SchemaTestCase(TestCase):
 
         self.assertEqual({"name", "secret"}, set(fs.create['required']))
 
+    @unittest.SkipTest
     def test_fieldset_format_response(self):
         pass
