@@ -11,6 +11,7 @@ from .utils import route_from, get_value
 
 
 class Key(Schema, ResourceBound):
+    is_local = False
 
     def matcher_type(self):
         type_ = self.response['type']
@@ -43,11 +44,16 @@ class RefKey(Key):
             "additionalProperties": False
         }
 
+    def _id_uri(self, resource, id_):
+        return '{}/{}'.format(resource.route_prefix, id_)
+
     def _item_uri(self, resource, item):
         # return url_for('{}.instance'.format(self.resource.meta.id_attribute, item, None), get_value(self.resource.meta.id_attribute, item, None))
         return '{}/{}'.format(resource.route_prefix, get_value(resource.manager.id_attribute, item, None))
 
-    def format(self, item):
+    def format(self, item, is_local=False):
+        if is_local:
+            return {'$ref': self._id_uri(self.resource, item)}
         return {"$ref": self._item_uri(self.resource, item)}
 
     def convert(self, value):
@@ -71,7 +77,7 @@ class PropertyKey(Key):
     def schema(self):
         return self.resource.schema.fields[self.property].request
 
-    def format(self, item):
+    def format(self, item, is_local=False):
         return self.resource.schema.fields[self.property].output(self.property, item)
 
     @cached_property
@@ -101,7 +107,7 @@ class PropertiesKey(Key):
             "additionalItems": False
         }
 
-    def format(self, item):
+    def format(self, item, is_local=False):
         return [self.resource.schema.fields[p].output(p, item) for p in self.properties]
 
     @cached_property
@@ -123,7 +129,7 @@ class IDKey(Key):
     def schema(self):
         return self.id_field.request
 
-    def format(self, item):
+    def format(self, item, is_local=False):
         return self.id_field.output(self.resource.manager.id_attribute, item)
 
     def convert(self, value):
