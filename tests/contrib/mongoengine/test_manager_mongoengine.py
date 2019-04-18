@@ -1,13 +1,10 @@
 import unittest
 
-from flask_mongoengine import MongoEngine
 from mongoengine.fields import StringField, FloatField, ReferenceField, ListField
 
-from flask_potion.contrib.mongoengine import MongoEngineManager
 from flask_potion.routes import Relation
-from flask_potion import Api, fields
+from flask_potion import fields
 from flask_potion.resource import ModelResource
-from tests import BaseTestCase
 from tests.contrib.mongoengine import MongoEngineTestCase
 
 
@@ -162,7 +159,8 @@ class MongoEngineManagerTestCase(MongoEngineTestCase):
         )
 
     def test_get(self):
-        type_ = lambda v: {"$type": "type", "name": "Type-{}".format(v), "machines": []}
+        def type_(v):
+            return {"$type": "type", "name": "Type-{}".format(v), "machines": []}
 
         for i in range(1, 10):
             response = self.client.post(

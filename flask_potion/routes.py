@@ -113,7 +113,7 @@ class Route(object):
     :param schema.Schema response_schema: response schema
     :param bool format_response: whether the response should be converted using the response schema
 
-    """
+    """  # noqa:E501
 
     def __init__(
         self,

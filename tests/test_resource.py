@@ -1,4 +1,3 @@
-from flask import json
 from flask_potion import fields, Api, Resource
 from tests import BaseTestCase
 

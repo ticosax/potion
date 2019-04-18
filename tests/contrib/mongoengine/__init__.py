@@ -11,7 +11,7 @@ class MongoEngineTestCase(BaseTestCase):
         super(MongoEngineTestCase, self).setUp()
         self.app.config['MONGODB_DB'] = 'potion-test-db'
         self.api = Api(self.app, default_manager=MongoEngineManager)
-        self.me = me = MongoEngine(self.app)
+        self.me = MongoEngine(self.app)
 
     def tearDown(self):
         connection_or_db = self.me.connection

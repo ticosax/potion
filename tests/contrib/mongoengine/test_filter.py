@@ -1,10 +1,8 @@
 import unittest
 
-from flask_mongoengine import MongoEngine
 from mongoengine.fields import IntField, StringField, BooleanField
 
-from flask_potion.contrib.mongoengine import MongoEngineManager
-from flask_potion import ModelResource, fields, Api
+from flask_potion import ModelResource, fields
 from tests.contrib.mongoengine import MongoEngineTestCase
 
 
@@ -212,7 +210,7 @@ class FilterTestCase(MongoEngineTestCase):
     @unittest.SkipTest
     def test_text_search(self):
         self.post_sample_set_a()
-        response = self.client.get('/user?search=sbc+dedf&rank=1')
+        self.client.get('/user?search=sbc+dedf&rank=1')
 
     def test_sort(self):
         self.post_sample_set_a()

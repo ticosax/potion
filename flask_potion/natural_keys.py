@@ -4,7 +4,6 @@ from .filters import Condition
 
 from .schema import Schema
 from .reference import ResourceBound
-from .exceptions import ItemNotFound
 from .utils import route_from, get_value, compat_escape
 
 
@@ -32,13 +31,9 @@ class RefKey(Key):
             "properties": {
                 "$ref": {
                     "type": "string",
-<<<<<<< HEAD
-                    "pattern": r"^{}\/[^/]+$".format(compat_escape(self.resource.route_prefix))
-=======
-                    "pattern": "^{}\/[^/]+$".format(
-                        re.escape(self.resource.route_prefix)
+                    "pattern": r"^{}\/[^/]+$".format(
+                        compat_escape(self.resource.route_prefix)
                     ),
->>>>>>> make project pep8 compliant
                 }
                 # TODO consider replacing with {$type: foo, $value: 123}
             },
@@ -46,7 +41,8 @@ class RefKey(Key):
         }
 
     def _item_uri(self, resource, item):
-        # return url_for('{}.instance'.format(self.resource.meta.id_attribute, item, None), get_value(self.resource.meta.id_attribute, item, None))
+        # return url_for('{}.instance'.format(self.resource.meta.id_attribute, item, None),
+        # get_value(self.resource.meta.id_attribute, item, None))
         return '{}/{}'.format(
             resource.route_prefix, get_value(resource.manager.id_attribute, item, None)
         )

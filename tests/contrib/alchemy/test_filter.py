@@ -380,7 +380,7 @@ class FilterTestCase(BaseTestCase):
     def test_text_search(self):
         self.post_sample_set_a()
 
-        response = self.client.get('/user?search=sbc+dedf&rank=1')
+        self.client.get('/user?search=sbc+dedf&rank=1')
 
     def test_sort(self):
         self.post_sample_set_a()

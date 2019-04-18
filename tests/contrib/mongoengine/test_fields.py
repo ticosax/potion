@@ -9,7 +9,7 @@ from mongoengine import (
     EmbeddedDocument,
 )
 
-from flask_potion import Api, ModelResource
+from flask_potion import ModelResource
 from tests.contrib.mongoengine import MongoEngineTestCase
 
 

@@ -14,7 +14,6 @@ from .fields import (
     DateTime,
     DateString,
     DateTimeString,
-    Custom,
 )
 
 
@@ -65,7 +64,7 @@ class BaseFilter(Schema):
         :param b: value filtered by
         :return: ``True`` on match, ``False`` otherwise
         """
-        raise NotImplemented()
+        raise NotImplementedError
 
     @property
     def filter_field(self):

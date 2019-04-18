@@ -1,11 +1,10 @@
-import json
 from operator import itemgetter
 from six import wraps
 from werkzeug.exceptions import Unauthorized
 from flask_potion import fields, Api
 from flask_potion.resource import Resource
 from flask_potion.routes import Route
-from flask_potion.schema import FieldSet, Schema
+from flask_potion.schema import FieldSet
 from tests import BaseTestCase
 
 
@@ -279,8 +278,6 @@ class ResourceTestCase(BaseTestCase):
 
         api = Api(self.app)
         api.add_resource(FooResource)
-
-        foo = self.app
 
         response = self.client.get("/foo/foo")
         self.assertEqual(201, response.status_code)

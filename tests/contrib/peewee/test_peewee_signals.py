@@ -89,7 +89,7 @@ class PeeweeSignalTestCase(BaseTestCase):
 
         try:
             yield None
-        except:
+        except Exception:
             for signal, receiver in receivers.items():
                 signal.disconnect(receiver)
             raise

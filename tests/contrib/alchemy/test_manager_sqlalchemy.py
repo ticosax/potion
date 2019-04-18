@@ -161,13 +161,14 @@ class SQLAlchemyTestCase(BaseTestCase):
         )
 
     def test_get(self):
-        type_ = lambda i: {
-            "$id": i,
-            "$type": "type",
-            "name": "Type-{}".format(i),
-            "machines": [],
-            'version': None,
-        }
+        def type_(i):
+            return {
+                "$id": i,
+                "$type": "type",
+                "name": "Type-{}".format(i),
+                "machines": [],
+                'version': None,
+            }
 
         for i in range(1, 10):
             response = self.client.post(
@@ -481,7 +482,7 @@ class SQLAlchemyInspectionTestCase(BaseTestCase):
         super(SQLAlchemyInspectionTestCase, self).setUp()
         self.app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
         self.api = Api(self.app)
-        self.sa = sa = SQLAlchemy(self.app, session_options={"autoflush": False})
+        self.sa = SQLAlchemy(self.app, session_options={"autoflush": False})
 
     def test_inspection_auto_id_attribute_type(self):
         sa = self.sa
@@ -522,7 +523,7 @@ class SQLAlchemySequenceTestCase(BaseTestCase):
         super(SQLAlchemySequenceTestCase, self).setUp()
         self.app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
         self.api = Api(self.app)
-        self.sa = sa = SQLAlchemy(self.app, session_options={"autoflush": False})
+        self.sa = SQLAlchemy(self.app, session_options={"autoflush": False})
 
     def test_sequence_primary_key(self):
         sa = self.sa

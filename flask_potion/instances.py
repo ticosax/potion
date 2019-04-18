@@ -15,7 +15,7 @@ class PaginationMixin(object):
 
     @cached_property
     def _pagination_types(self):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def format_response(self, data):
         if not isinstance(data, self._pagination_types):

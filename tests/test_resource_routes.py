@@ -1,9 +1,8 @@
-from unittest import TestCase
 import unittest
 
 from flask_potion.schema import FieldSet
 from flask_potion.contrib.memory.manager import MemoryManager
-from flask_potion.resource import ModelResource, Resource
+from flask_potion.resource import ModelResource
 from flask_potion import Api, fields
 from flask_potion.routes import ItemAttributeRoute, Relation, ItemRoute, Route
 from tests import BaseTestCase

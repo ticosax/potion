@@ -2,7 +2,7 @@ import calendar
 from datetime import datetime
 
 import aniso8601
-from flask import current_app, request
+from flask import current_app
 import six
 from werkzeug.utils import cached_property
 
@@ -260,7 +260,9 @@ class Array(Raw, ResourceBound):
             ]
             if v is not None
         ]
-        schema = lambda s: dict([('items', s)] + schema_properties)
+
+        def schema(s):
+            return dict([('items', s)] + schema_properties)
 
         super(Array, self).__init__(
             lambda: (schema(container.response), schema(container.request)),
@@ -775,7 +777,6 @@ class ToOne(Raw, ResourceBound):
         self.target_reference = ResourceReference(resource)
 
         def schema():
-            target = self.target
             key_converters = self.target.meta.key_converters
             response_schema = self.formatter_key.response
             if len(key_converters) > 1:

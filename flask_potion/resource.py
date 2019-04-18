@@ -1,12 +1,11 @@
 from collections import OrderedDict
 import inspect
 from operator import attrgetter
-import itertools
 
 import six
 
-from .natural_keys import RefKey, IDKey, PropertyKey, PropertiesKey
-from .fields import ItemType, ItemUri, Integer, Inline
+from .natural_keys import RefKey, IDKey
+from .fields import Integer, Inline
 from .reference import ResourceBound
 from .instances import Instances
 from .utils import AttributeDict
@@ -160,7 +159,7 @@ class Resource(six.with_metaclass(ResourceMeta, object)):
 
         A :class:`Route` at ``/schema`` that contains the JSON Hyper-Schema for this resource.
 
-    """
+    """  # noqa: E501
 
     api = None
     meta = None
@@ -278,7 +277,7 @@ class ModelResource(six.with_metaclass(ModelResourceMeta, Resource)):
         :param id: item id
         :return: ``(None, 204)``
 
-    """
+    """  # noqa:E501
 
     manager = None
 

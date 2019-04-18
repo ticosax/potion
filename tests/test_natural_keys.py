@@ -1,21 +1,20 @@
-import unittest
 from flask_potion.exceptions import ItemNotFound, ValidationError
 from flask_potion.contrib.memory.manager import MemoryManager
-from flask_potion.natural_keys import RefKey, IDKey, PropertiesKey, PropertyKey
+from flask_potion.natural_keys import RefKey, PropertyKey
 from flask_potion import fields
 from flask_potion import Api
-from flask_potion.resource import Resource, ModelResource
+from flask_potion.resource import ModelResource
 from tests import BaseTestCase
 
 FOO_REFERENCE = {
     "type": "object",
-    "properties": {"$ref": {"type": "string", "pattern": "^\/api\/foo\/[^/]+$"}},
+    "properties": {"$ref": {"type": "string", "pattern": r"^\/api\/foo\/[^/]+$"}},
     "additionalProperties": False,
 }
 
 FOO_REFERENCE_NULLABLE = {
     "type": ["object", "null"],
-    "properties": {"$ref": {"type": "string", "pattern": "^\/api\/foo\/[^/]+$"}},
+    "properties": {"$ref": {"type": "string", "pattern": r"^\/api\/foo\/[^/]+$"}},
     "additionalProperties": False,
 }
 

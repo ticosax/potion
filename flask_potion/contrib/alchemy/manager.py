@@ -9,11 +9,7 @@ from sqlalchemy.orm.collections import InstrumentedList
 from sqlalchemy.orm.exc import NoResultFound
 
 from flask_potion import fields
-from flask_potion.contrib.alchemy.filters import (
-    FILTER_NAMES,
-    FILTERS_BY_TYPE,
-    SQLAlchemyBaseFilter,
-)
+from flask_potion.contrib.alchemy.filters import FILTER_NAMES, FILTERS_BY_TYPE
 from flask_potion.exceptions import ItemNotFound, DuplicateKey, BackendConflict
 from flask_potion.instances import Pagination
 from flask_potion.manager import RelationalManager
@@ -384,10 +380,7 @@ class SQLAlchemyManager(RelationalManager):
             if target_item in collection:
                 collection.remove(target_item)
                 after_remove_from_relation.send(
-                    self.resource,
-                    item=item,
-                    attribute=attribute,
-                    child=target_item,
+                    self.resource, item=item, attribute=attribute, child=target_item
                 )
 
     def commit(self):

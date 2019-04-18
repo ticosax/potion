@@ -39,7 +39,7 @@ class BlueprintApiTestCase(BaseTestCase):
 
         # Register Blueprint
         self.app.register_blueprint(api_bp)
-        response = self.client.get("/samples")
+        self.client.get("/samples")
 
     def test_api_blueprint_w_prefix(self):
         api_bp = Blueprint("potion_blueprint", __name__.split(".")[0])

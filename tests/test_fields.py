@@ -3,7 +3,6 @@ from unittest import TestCase
 from uuid import uuid4
 import unittest
 from datetime import datetime, date, timedelta
-from werkzeug.exceptions import BadRequest
 from flask_potion.exceptions import ValidationError
 from flask_potion import fields
 

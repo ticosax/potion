@@ -1,7 +1,6 @@
 from functools import partial
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import backref
-from flask_potion import fields
 from flask_potion import signals
 from flask_potion.routes import Relation
 from flask_potion.resource import ModelResource
@@ -95,7 +94,7 @@ class SQLAlchemySignalTestCase(BaseTestCase):
 
         try:
             yield None
-        except:
+        except Exception:
             for signal, receiver in receivers.items():
                 signal.disconnect(receiver)
             raise

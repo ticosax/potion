@@ -1,5 +1,5 @@
 from flask_potion.contrib.memory import MemoryManager
-from flask_potion import fields, Api, Resource, ModelResource
+from flask_potion import fields, Api, ModelResource
 from tests import BaseTestCase
 
 

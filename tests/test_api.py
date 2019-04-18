@@ -32,7 +32,7 @@ class ApiTestCase(BaseTestCase):
         self.assert200(response)
 
     def test_api_schema(self):
-        api = Api(self.app, title="Welcome to Foo API!", description="...")
+        Api(self.app, title="Welcome to Foo API!", description="...")
 
         response = self.client.get("/schema")
         self.assertEqual(

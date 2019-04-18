@@ -122,9 +122,9 @@ class PrincipalTestCase(BaseTestCase):
 
     def test_role(self):
         with self.assertRaises(RuntimeError):
-            manager = principals(MemoryManager)
+            principals(MemoryManager)
 
-    def test_role(self):
+    def test_create_author(self):
         class BookResource(PrincipalResource):
             class Meta:
                 model = self.BOOK

@@ -1,6 +1,5 @@
 from flask import g
 from flask_principal import Permission
-from sqlalchemy import or_
 
 from .needs import HybridNeed
 

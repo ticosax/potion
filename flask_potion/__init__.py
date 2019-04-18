@@ -2,12 +2,12 @@ from collections import OrderedDict
 import inspect
 import operator
 from functools import partial
-from flask import current_app, make_response, json, Response, request
+from flask import current_app, make_response, json, request
 from six import wraps
 from werkzeug.exceptions import HTTPException
 from werkzeug.wrappers import BaseResponse
 from .exceptions import PotionException
-from .routes import RouteSet, to_camel_case
+from .routes import RouteSet
 from .utils import unpack
 from .resource import Resource, ModelResource
 
@@ -53,7 +53,7 @@ class Api(object):
     :param str title: an optional title for the schema
     :param str description: an optional description for the schema
     :param Manager default_manager: an optional manager to use as default. If SQLAlchemy is installed, will use :class:`contrib.alchemy.SQLAlchemyManager`
-    """
+    """  # noqa: E501
 
     def __init__(
         self,

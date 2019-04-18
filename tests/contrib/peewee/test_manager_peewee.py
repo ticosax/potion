@@ -1,5 +1,3 @@
-import unittest
-
 import peewee as pw
 from playhouse.fields import ManyToManyField
 

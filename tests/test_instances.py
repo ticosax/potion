@@ -1,4 +1,3 @@
-import unittest
 from flask_potion import Api, fields
 from flask_potion.contrib.memory.manager import MemoryManager
 from flask_potion.resource import ModelResource

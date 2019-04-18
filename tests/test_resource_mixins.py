@@ -1,6 +1,6 @@
 from flask_potion.routes import Route
 from flask_potion import fields, Api
-from flask_potion.resource import ModelResource, Resource
+from flask_potion.resource import Resource
 from tests import BaseTestCase
 
 

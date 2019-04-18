@@ -1,16 +1,12 @@
 from functools import partial
 
-from flask_mongoengine import MongoEngine
 from mongoengine import StringField, ReferenceField, ListField
 from blinker._utilities import contextmanager
 from blinker import ANY
 
-from flask_potion.contrib.mongoengine import MongoEngineManager
 from flask_potion import signals
 from flask_potion.routes import Relation
 from flask_potion.resource import ModelResource
-from flask_potion import Api
-from tests import BaseTestCase
 from tests.contrib.mongoengine import MongoEngineTestCase
 
 
@@ -84,7 +80,7 @@ class MongoEngineSignalTestCase(MongoEngineTestCase):
 
         try:
             yield None
-        except:
+        except Exception:
             for signal, receiver in receivers.items():
                 signal.disconnect(receiver)
             raise

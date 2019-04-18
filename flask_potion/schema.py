@@ -93,7 +93,7 @@ class Schema(object):
             validator = self._validator
         try:
             validator.validate(instance)
-        except ValidationError as ve:
+        except ValidationError:
             errors = validator.iter_errors(instance)
             raise PotionValidationError(errors)
         return instance

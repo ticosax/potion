@@ -2,7 +2,6 @@ from importlib import import_module
 import inspect
 
 import six
-from flask import current_app, _app_ctx_stack
 
 
 class ResourceReference(object):

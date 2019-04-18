@@ -29,7 +29,7 @@ def route_from(url, method=None):
                 'the SERVER_NAME config variable.'
             )
     parsed_url = url_parse(url)
-    if parsed_url.netloc is not "" and parsed_url.netloc != url_adapter.server_name:
+    if parsed_url.netloc != "" and parsed_url.netloc != url_adapter.server_name:
         raise NotFound()
     return url_adapter.match(parsed_url.path, method)
 

@@ -1,6 +1,5 @@
 import datetime
 import six
-from werkzeug.utils import cached_property
 from .fields import (
     String,
     Boolean,
