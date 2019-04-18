@@ -16,10 +16,9 @@ class RouteTestCase(BaseTestCase):
                 name = 'foo'
 
         route = Route(rule='/test')
-        route = route.GET(rel='test')(lambda resource: {
-            'success': True,
-            'boundToResource': resource.meta.name
-        })
+        route = route.GET(rel='test')(
+            lambda resource: {'success': True, 'boundToResource': resource.meta.name}
+        )
 
         view = route.view_factory('', FooResource)
 
@@ -30,13 +29,16 @@ class RouteTestCase(BaseTestCase):
         route = Route.GET(title="foo", description="bar")(lambda *args, **kwargs: None)
         route.attribute = 'attr'
 
-        self.assertEqual({
-            "description": "bar",
-            "href": "attr",
-            "method": "GET",
-            "rel": "readAttr",
-            "title": "foo"
-        }, route.schema_factory(Resource))
+        self.assertEqual(
+            {
+                "description": "bar",
+                "href": "attr",
+                "method": "GET",
+                "rel": "readAttr",
+                "title": "foo",
+            },
+            route.schema_factory(Resource),
+        )
 
     def test_route_success_code(self):
         route = Route.GET(success_code=201, rule='/test')(lambda *args, **kwargs: None)
@@ -60,18 +62,14 @@ class ResourceTestCase(BaseTestCase):
         data, code, headers = FooResource().described_by()
         self.assertEqual({'Content-Type': 'application/schema+json'}, headers)
         self.assertEqual(200, code)
-        self.assertJSONEqual({
-            "$schema": "http://json-schema.org/draft-04/hyper-schema#",
-            "title": "Foo bar",
-            "links": [
-                {
-                    "rel": "describedBy",
-                    "href": "schema",
-                    "method": "GET"
-                }
-            ]
-        }, data)
-
+        self.assertJSONEqual(
+            {
+                "$schema": "http://json-schema.org/draft-04/hyper-schema#",
+                "title": "Foo bar",
+                "links": [{"rel": "describedBy", "href": "schema", "method": "GET"}],
+            },
+            data,
+        )
 
     def test_resource_simple_route(self):
         class FooResource(Resource):
@@ -85,24 +83,21 @@ class ResourceTestCase(BaseTestCase):
                 name = 'foo'
 
         data, code, headers = FooResource().described_by()
-        self.assertJSONEqual({
-            "$schema": "http://json-schema.org/draft-04/hyper-schema#",
-            "links": [
-                {
-                    "rel": "createFoo",
-                    "href": "foo",
-                    "method": "POST",
-                    "targetSchema": {
-                        "type": "boolean"
-                    }
-                },
-                {
-                    "rel": "describedBy",
-                    "href": "schema",
-                    "method": "GET"
-                }
-            ]
-        }, data)
+        self.assertJSONEqual(
+            {
+                "$schema": "http://json-schema.org/draft-04/hyper-schema#",
+                "links": [
+                    {
+                        "rel": "createFoo",
+                        "href": "foo",
+                        "method": "POST",
+                        "targetSchema": {"type": "boolean"},
+                    },
+                    {"rel": "describedBy", "href": "schema", "method": "GET"},
+                ],
+            },
+            data,
+        )
 
     def test_resource_route_rule_resolution(self):
         class FooResource(Resource):
@@ -121,20 +116,19 @@ class ResourceTestCase(BaseTestCase):
         self.assertEqual('<int:id>', FooResource.read.rule_factory(FooResource, True))
 
         data, code, headers = FooResource().described_by()
-        self.assertJSONEqual({
-            "rel": "self",
-            "href": "/v1/foo/{id}",
-            "method": "GET",
-            "targetSchema": {
-                "type": "object",
-                "properties": {
-                    "id": {
-                        "type": "integer"
-                    }
+        self.assertJSONEqual(
+            {
+                "rel": "self",
+                "href": "/v1/foo/{id}",
+                "method": "GET",
+                "targetSchema": {
+                    "type": "object",
+                    "properties": {"id": {"type": "integer"}},
+                    "additionalProperties": False,
                 },
-                "additionalProperties": False
-            }
-        }, data["links"][1])
+            },
+            data["links"][1],
+        )
 
     def test_resource_method_route(self):
         class FooResource(Resource):
@@ -154,46 +148,31 @@ class ResourceTestCase(BaseTestCase):
                 name = 'foo'
 
         data, code, headers = FooResource().described_by()
-        self.assertJSONEqual([
-            {
-                "rel": "createBar",
-                "href": "bar",
-                "method": "POST",
-                "schema": {
-                    "additionalProperties": False,
-                    "properties": {
-                        "value": {
-                            "type": [
-                                "boolean",
-                                "null"
-                            ]
-                        }
+        self.assertJSONEqual(
+            [
+                {
+                    "rel": "createBar",
+                    "href": "bar",
+                    "method": "POST",
+                    "schema": {
+                        "additionalProperties": False,
+                        "properties": {"value": {"type": ["boolean", "null"]}},
+                        "type": "object",
                     },
-                    "type": "object"
-                }
-            },
-            {
-                "rel": "describedBy",
-                "href": "schema",
-                "method": "GET"
-            },
-            {
-                "rel": "readBar",
-                "href": "bar",
-                "method": "GET",
-                "targetSchema": {
-                    "properties": {
-                        "value": {
-                            "type": [
-                                "boolean",
-                                "null"
-                            ]
-                        }
+                },
+                {"rel": "describedBy", "href": "schema", "method": "GET"},
+                {
+                    "rel": "readBar",
+                    "href": "bar",
+                    "method": "GET",
+                    "targetSchema": {
+                        "properties": {"value": {"type": ["boolean", "null"]}},
+                        "type": "object",
                     },
-                    "type": "object"
-                }
-            },
-        ], sorted(data['links'], key=itemgetter('rel')))
+                },
+            ],
+            sorted(data['links'], key=itemgetter('rel')),
+        )
 
     def test_route_replace(self):
         class FooResource(Resource):
@@ -209,7 +188,6 @@ class ResourceTestCase(BaseTestCase):
                 name = 'foo'
 
         class BarResource(FooResource):
-
             @Route.POST('', rel='create')
             def create(self):
                 return 'bar'
@@ -217,37 +195,43 @@ class ResourceTestCase(BaseTestCase):
             class Meta:
                 name = 'bar'
 
-        self.assertEqual({
-            'read': FooResource.read,
-            'describedBy': FooResource.described_by,
-            'create': FooResource.create
-        }, FooResource.routes)
+        self.assertEqual(
+            {
+                'read': FooResource.read,
+                'describedBy': FooResource.described_by,
+                'create': FooResource.create,
+            },
+            FooResource.routes,
+        )
 
-        self.assertEqual({
-            'read': FooResource.read,
-            'describedBy': BarResource.described_by,
-            'create': BarResource.create
-        }, BarResource.routes)
+        self.assertEqual(
+            {
+                'read': FooResource.read,
+                'describedBy': BarResource.described_by,
+                'create': BarResource.create,
+            },
+            BarResource.routes,
+        )
 
         self.assertEqual('foo', FooResource().create())
         self.assertEqual('bar', BarResource().create())
 
     def test_route_decorator(self):
-
         def unauthorize(fn):
             @wraps(fn)
             def wrapper(*args, **kwargs):
                 raise Unauthorized()
+
             return wrapper
 
         def denormalize(fn):
             @wraps(fn)
             def wrapper(*args, **kwargs):
                 return 'not ' + fn(*args, **kwargs)
+
             return wrapper
 
         class FooResource(Resource):
-
             @Route.GET
             def no_decorator(self):
                 return 'normal'
@@ -265,7 +249,7 @@ class ResourceTestCase(BaseTestCase):
                 title = 'Foo bar'
                 route_decorators = {
                     'readSimpleDecorator': denormalize,
-                    'readUnauthorizeDecorator': unauthorize
+                    'readUnauthorizeDecorator': unauthorize,
                 }
 
         self.assertEqual('normal', FooResource().no_decorator())
@@ -303,7 +287,6 @@ class ResourceTestCase(BaseTestCase):
         self.assertEqual('foo', response.json)
 
     def test_route_disabling(self):
-
         class FooResource(Resource):
             @Route.GET
             def foo(self):
@@ -337,17 +320,23 @@ class ResourceTestCase(BaseTestCase):
         api.add_resource(BarResource)
         api.add_resource(BazResource)
 
-        self.assertEqual({
-            'describedBy': Resource.described_by,
-            'readFoo': FooResource.foo,
-            'createBaz': FooResource.baz
-        }, FooResource.routes)
+        self.assertEqual(
+            {
+                'describedBy': Resource.described_by,
+                'readFoo': FooResource.foo,
+                'createBaz': FooResource.baz,
+            },
+            FooResource.routes,
+        )
 
-        self.assertEqual({
-            'describedBy': Resource.described_by,
-            'readFoo': FooResource.foo,
-            'createBaz': FooResource.baz
-        }, BarResource.routes)
+        self.assertEqual(
+            {
+                'describedBy': Resource.described_by,
+                'readFoo': FooResource.foo,
+                'createBaz': FooResource.baz,
+            },
+            BarResource.routes,
+        )
 
         self.assertIsNone(BazResource.routes.get('readFoo', None))
         self.assertIsNotNone(BazResource.routes.get('readBaz', None))
@@ -380,7 +369,6 @@ class ResourceTestCase(BaseTestCase):
         self.assert200(response)
         self.assertEqual('baz: 123', response.json)
 
-
     def test_resource_schema(self):
         class UserResource(Resource):
             @Route.GET('/<int:id>', rel="self")
@@ -397,12 +385,10 @@ class ResourceTestCase(BaseTestCase):
                 name = 'user'
 
         data, code, headers = UserResource().described_by()
-        self.assertEqual({
-            "name": {
-                "type": "string"
+        self.assertEqual(
+            {
+                "name": {"type": "string"},
+                "age": {"type": ["integer", "null"], "minimum": 1},
             },
-            "age": {
-                "type": ["integer", "null"],
-                "minimum": 1
-            }
-        }, data["properties"])
+            data["properties"],
+        )

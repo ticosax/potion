@@ -27,7 +27,9 @@ class SQLAlchemyTestCase(BaseTestCase):
             wattage = sa.Column(sa.Float)
 
             type_id = sa.Column(sa.Integer, sa.ForeignKey(Type.id))
-            type = sa.relationship(Type, backref=backref('machines', lazy='dynamic', uselist=True))
+            type = sa.relationship(
+                Type, backref=backref('machines', lazy='dynamic', uselist=True)
+            )
 
         sa.create_all()
 
@@ -59,8 +61,14 @@ class SQLAlchemyTestCase(BaseTestCase):
         self.sa.drop_all()
 
     def test_field_discovery(self):
-        self.assertEqual(set(self.MachineResource.schema.fields.keys()), {'$id', '$type', 'name', 'type', 'wattage'})
-        self.assertEqual(set(self.TypeResource.schema.fields.keys()), {'$id', '$type', 'name', 'version', 'machines'})
+        self.assertEqual(
+            set(self.MachineResource.schema.fields.keys()),
+            {'$id', '$type', 'name', 'type', 'wattage'},
+        )
+        self.assertEqual(
+            set(self.TypeResource.schema.fields.keys()),
+            {'$id', '$type', 'name', 'version', 'machines'},
+        )
         self.assertEqual(self.MachineResource.meta.name, 'machine')
         self.assertEqual(self.TypeResource.meta.name, 'type')
 
@@ -82,51 +90,89 @@ class SQLAlchemyTestCase(BaseTestCase):
     def test_create(self):
         response = self.client.post('/type', data={})
         self.assert400(response)
-        self.assertEqual({
-            "errors": [
-                {
-                    "message": "'name' is a required property",
-                    "path": [],
-                    "validationOf": {
-                        "required": [
-                            "name"
-                        ]
+        self.assertEqual(
+            {
+                "errors": [
+                    {
+                        "message": "'name' is a required property",
+                        "path": [],
+                        "validationOf": {"required": ["name"]},
                     }
-                }
-            ],
-            "message": "Bad Request",
-            "status": 400
-        }, response.json)
+                ],
+                "message": "Bad Request",
+                "status": 400,
+            },
+            response.json,
+        )
 
         response = self.client.post('/type', data={"name": "x-ray"})
-        self.assertJSONEqual({'$id': 1, '$type': 'type', 'machines': [], "name": "x-ray", 'version': None}, response.json)
+        self.assertJSONEqual(
+            {
+                '$id': 1,
+                '$type': 'type',
+                'machines': [],
+                "name": "x-ray",
+                'version': None,
+            },
+            response.json,
+        )
 
-        response = self.client.post('/machine', data={"name": "Irradiator I", "type": 1})
+        response = self.client.post(
+            '/machine', data={"name": "Irradiator I", "type": 1}
+        )
         self.assert200(response)
-        self.assertJSONEqual({'$id': 1, '$type': 'machine', 'type': {"$ref": "/type/1"}, "wattage": None, "name": "Irradiator I"}, response.json)
+        self.assertJSONEqual(
+            {
+                '$id': 1,
+                '$type': 'machine',
+                'type': {"$ref": "/type/1"},
+                "wattage": None,
+                "name": "Irradiator I",
+            },
+            response.json,
+        )
 
-        response = self.client.post('/machine', data={"name": "Sol IV", "type": 1, "wattage": 1.23e45})
+        response = self.client.post(
+            '/machine', data={"name": "Sol IV", "type": 1, "wattage": 1.23e45}
+        )
         self.assert200(response)
-        self.assertJSONEqual({'$id': 2, '$type': 'machine', 'type': {"$ref": "/type/1"}, "wattage":  1.23e45, "name": "Sol IV"}, response.json)
+        self.assertJSONEqual(
+            {
+                '$id': 2,
+                '$type': 'machine',
+                'type': {"$ref": "/type/1"},
+                "wattage": 1.23e45,
+                "name": "Sol IV",
+            },
+            response.json,
+        )
 
         response = self.client.get('/type/1')
         self.assert200(response)
-        self.assertJSONEqual({
-                                 '$id': 1,
-                                 '$type': 'type',
-                                 'machines': [
-                                     {'$ref': '/machine/1'},
-                                     {'$ref': '/machine/2'}
-                                 ],
-                                 "name": "x-ray",
-                                 'version': None
-                             }, response.json)
+        self.assertJSONEqual(
+            {
+                '$id': 1,
+                '$type': 'type',
+                'machines': [{'$ref': '/machine/1'}, {'$ref': '/machine/2'}],
+                "name": "x-ray",
+                'version': None,
+            },
+            response.json,
+        )
 
     def test_get(self):
-        type_ = lambda i: {"$id": i, "$type": "type", "name": "Type-{}".format(i), "machines": [], 'version': None}
+        type_ = lambda i: {
+            "$id": i,
+            "$type": "type",
+            "name": "Type-{}".format(i),
+            "machines": [],
+            'version': None,
+        }
 
         for i in range(1, 10):
-            response = self.client.post('/type', data={"name": "Type-{}".format(i), "machines": []})
+            response = self.client.post(
+                '/type', data={"name": "Type-{}".format(i), "machines": []}
+            )
             self.assert200(response)
             self.assertJSONEqual(type_(i), response.json)
 
@@ -140,15 +186,18 @@ class SQLAlchemyTestCase(BaseTestCase):
 
             response = self.client.get('/type/{}'.format(i + 1))
             self.assert404(response)
-            self.assertJSONEqual({
-                                     'item': {'$id': i + 1, '$type': 'type'},
-                                     'message': 'Not Found',
-                                     'status': 404
-                                 }, response.json)
+            self.assertJSONEqual(
+                {
+                    'item': {'$id': i + 1, '$type': 'type'},
+                    'message': 'Not Found',
+                    'status': 404,
+                },
+                response.json,
+            )
 
     @unittest.SkipTest
     def test_pagination(self):
-        pass # TODO
+        pass  # TODO
 
     def test_update(self):
         response = self.client.post('/type', data={"name": "T1"})
@@ -159,60 +208,101 @@ class SQLAlchemyTestCase(BaseTestCase):
 
         response = self.client.post('/machine', data={"name": "Robot", "type": 1})
         self.assert200(response)
-        self.assertJSONEqual({'$id': 1, '$type': 'machine', 'type': {"$ref": "/type/1"}, "wattage": None, "name": "Robot"}, response.json)
+        self.assertJSONEqual(
+            {
+                '$id': 1,
+                '$type': 'machine',
+                'type': {"$ref": "/type/1"},
+                "wattage": None,
+                "name": "Robot",
+            },
+            response.json,
+        )
 
         response = self.client.patch('/machine/1', data={})
         self.assert200(response)
 
         response = self.client.patch('/machine/1', data={"wattage": 10000})
         self.assert200(response)
-        self.assertJSONEqual({'$id': 1, '$type': 'machine', 'type': {"$ref": "/type/1"}, "wattage": 10000, "name": "Robot"}, response.json)
+        self.assertJSONEqual(
+            {
+                '$id': 1,
+                '$type': 'machine',
+                'type': {"$ref": "/type/1"},
+                "wattage": 10000,
+                "name": "Robot",
+            },
+            response.json,
+        )
 
         response = self.client.patch('/machine/1', data={"type": {"$ref": "/type/2"}})
         self.assert200(response)
-        self.assertJSONEqual({'$id': 1, '$type': 'machine', 'type': {"$ref": "/type/2"}, "wattage": 10000, "name": "Robot"}, response.json)
+        self.assertJSONEqual(
+            {
+                '$id': 1,
+                '$type': 'machine',
+                'type': {"$ref": "/type/2"},
+                "wattage": 10000,
+                "name": "Robot",
+            },
+            response.json,
+        )
 
         response = self.client.patch('/type/1', data={"version": 1})
-        self.assertJSONEqual({'$id': 1, '$type': 'type', 'name': 'T1', 'version': 1, 'machines': []}, response.json)
+        self.assertJSONEqual(
+            {'$id': 1, '$type': 'type', 'name': 'T1', 'version': 1, 'machines': []},
+            response.json,
+        )
 
         response = self.client.patch('/type/1', data={"version": None})
-        self.assertJSONEqual({'$id': 1, '$type': 'type', 'name': 'T1', 'machines': [], 'version': None}, response.json)
+        self.assertJSONEqual(
+            {'$id': 1, '$type': 'type', 'name': 'T1', 'machines': [], 'version': None},
+            response.json,
+        )
 
         response = self.client.patch('/machine/1', data={"type": None})
         self.assert400(response)
-        self.assertJSONEqual({
-                                 'errors': [
-                                     {
-                                         "message": "None is not valid under any of the given schemas",
-                                         "path": [
-                                             "type"
-                                         ],
-                                         "validationOf": {
-                                             "anyOf": [
-                                                 {
-                                                     "additionalProperties": False,
-                                                     "properties": {
-                                                         "$ref": {
-                                                             "pattern": "^\\/type\\/[^/]+$",
-                                                             "type": "string"
-                                                         }
-                                                     },
-                                                     "type": "object"
-                                                 },
-                                                 {
-                                                     "type": "integer"
-                                                 }
-                                             ]
-                                         }
-                                     }
-                                 ],
-                                 'message': 'Bad Request',
-                                 'status': 400
-                             }, response.json)
+        self.assertJSONEqual(
+            {
+                'errors': [
+                    {
+                        "message": "None is not valid under any of the given schemas",
+                        "path": ["type"],
+                        "validationOf": {
+                            "anyOf": [
+                                {
+                                    "additionalProperties": False,
+                                    "properties": {
+                                        "$ref": {
+                                            "pattern": "^\\/type\\/[^/]+$",
+                                            "type": "string",
+                                        }
+                                    },
+                                    "type": "object",
+                                },
+                                {"type": "integer"},
+                            ]
+                        },
+                    }
+                ],
+                'message': 'Bad Request',
+                'status': 400,
+            },
+            response.json,
+        )
 
         response = self.client.patch('/machine/1', data={"name": "Foo"})
         self.assert200(response)
-        self.assertJSONEqual({'$id': 1, '$type': 'machine', 'type': {"$ref": "/type/2"}, "wattage": 10000, "name": "Foo"}, response.json)
+        self.assertJSONEqual(
+            {
+                '$id': 1,
+                '$type': 'machine',
+                'type': {"$ref": "/type/2"},
+                "wattage": 10000,
+                "name": "Foo",
+            },
+            response.json,
+        )
 
     def test_delete(self):
         response = self.client.delete('/type/1')
@@ -229,29 +319,35 @@ class SQLAlchemyTestCase(BaseTestCase):
 
 
 class SQLAlchemyRelationTestCase(BaseTestCase):
-
     def setUp(self):
         super(SQLAlchemyRelationTestCase, self).setUp()
         self.app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
         self.api = Api(self.app)
         self.sa = sa = SQLAlchemy(self.app, session_options={"autoflush": False})
 
-        group_members = sa.Table('group_members',
-                               sa.Column('group_id', sa.Integer(), sa.ForeignKey('group.id')),
-                               sa.Column('user_id', sa.Integer(), sa.ForeignKey('user.id')))
+        group_members = sa.Table(
+            'group_members',
+            sa.Column('group_id', sa.Integer(), sa.ForeignKey('group.id')),
+            sa.Column('user_id', sa.Integer(), sa.ForeignKey('user.id')),
+        )
 
         class User(sa.Model):
             id = sa.Column(sa.Integer, primary_key=True)
             parent_id = sa.Column(sa.Integer, sa.ForeignKey(id))
             name = sa.Column(sa.String(60), nullable=False)
 
-            parent = sa.relationship('User', remote_side=[id], backref=backref('children', lazy='dynamic'))
+            parent = sa.relationship(
+                'User', remote_side=[id], backref=backref('children', lazy='dynamic')
+            )
 
         class Group(sa.Model):
             id = sa.Column(sa.Integer, primary_key=True)
             name = sa.Column(sa.String(60), nullable=False)
-            members = sa.relationship('User', secondary=group_members,
-                                      backref=backref('memberships', lazy='dynamic'))
+            members = sa.relationship(
+                'User',
+                secondary=group_members,
+                backref=backref('memberships', lazy='dynamic'),
+            )
 
         sa.create_all()
 
@@ -352,26 +448,35 @@ class SQLAlchemyRelationTestCase(BaseTestCase):
         for i in range(2, 50):
             response = self.client.post('/user', data={"name": str(i)})
             self.assert200(response)
-            response = self.client.post('/user/1/children', data={"$ref": "/user/{}".format(response.json['$id'])})
+            response = self.client.post(
+                '/user/1/children',
+                data={"$ref": "/user/{}".format(response.json['$id'])},
+            )
             self.assert200(response)
 
         response = self.client.get('/user/1/children')
         self.assert200(response)
-        self.assertJSONEqual([{"$ref": "/user/{}".format(i)} for i in range(2, 22)], response.json)
+        self.assertJSONEqual(
+            [{"$ref": "/user/{}".format(i)} for i in range(2, 22)], response.json
+        )
 
         response = self.client.get('/user/1/children?page=3')
         self.assert200(response)
-        self.assertJSONEqual([{"$ref": "/user/{}".format(i)} for i in range(42, 50)], response.json)
+        self.assertJSONEqual(
+            [{"$ref": "/user/{}".format(i)} for i in range(42, 50)], response.json
+        )
 
         self.assertEqual('48', response.headers['X-Total-Count'])
-        self.assertEqual('</user/1/children?page=3&per_page=20>; rel="self",'
-                         '</user/1/children?page=1&per_page=20>; rel="first",'
-                         '</user/1/children?page=2&per_page=20>; rel="prev",'
-                         '</user/1/children?page=3&per_page=20>; rel="last"', response.headers['Link'])
+        self.assertEqual(
+            '</user/1/children?page=3&per_page=20>; rel="self",'
+            '</user/1/children?page=1&per_page=20>; rel="first",'
+            '</user/1/children?page=2&per_page=20>; rel="prev",'
+            '</user/1/children?page=3&per_page=20>; rel="last"',
+            response.headers['Link'],
+        )
 
 
 class SQLAlchemyInspectionTestCase(BaseTestCase):
-
     def setUp(self):
         super(SQLAlchemyInspectionTestCase, self).setUp()
         self.app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
@@ -401,19 +506,18 @@ class SQLAlchemyInspectionTestCase(BaseTestCase):
         self.assertEqual('username', UserResource.manager.id_field.attribute)
         self.assertIsInstance(UserResource.manager.id_field, fields.String)
 
-        response = self.client.post('/user', data={"username": "foo", "first_name": "Foo"})
+        response = self.client.post(
+            '/user', data={"username": "foo", "first_name": "Foo"}
+        )
         self.assert200(response)
 
-        self.assertJSONEqual({
-            "$id": "foo",
-            "first_name": "Foo",
-            "last_name": None,
-            "username": "foo"
-        }, response.json)
+        self.assertJSONEqual(
+            {"$id": "foo", "first_name": "Foo", "last_name": None, "username": "foo"},
+            response.json,
+        )
 
 
 class SQLAlchemySequenceTestCase(BaseTestCase):
-
     def setUp(self):
         super(SQLAlchemySequenceTestCase, self).setUp()
         self.app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
@@ -444,20 +548,15 @@ class SQLAlchemySequenceTestCase(BaseTestCase):
         response = self.client.post('/user', data={"username": "foo"})
         self.assert200(response)
 
-        self.assertJSONEqual({
-            "$id": 1,
-            "username": "foo"
-        }, response.json)
+        self.assertJSONEqual({"$id": 1, "username": "foo"}, response.json)
 
 
 class SQLAlchemySortTestCase(BaseTestCase):
-
     def setUp(self):
         super(SQLAlchemySortTestCase, self).setUp()
         self.app.config['SQLALCHEMY_ENGINE'] = 'sqlite://'
         self.api = Api(self.app)
-        self.sa = sa = SQLAlchemy(
-            self.app, session_options={"autoflush": False})
+        self.sa = sa = SQLAlchemy(self.app, session_options={"autoflush": False})
 
         class Type(sa.Model):
             id = sa.Column(sa.Integer, primary_key=True)
@@ -497,10 +596,13 @@ class SQLAlchemySortTestCase(BaseTestCase):
         response = self.client.get('/type')
         self.assert200(response)
         self.assertJSONEqual(
-            [{'$uri': '/type/2', 'name': 'ccc'},
-             {'$uri': '/type/3', 'name': 'bbb'},
-             {'$uri': '/type/1', 'name': 'aaa'}],
-            response.json)
+            [
+                {'$uri': '/type/2', 'name': 'ccc'},
+                {'$uri': '/type/3', 'name': 'bbb'},
+                {'$uri': '/type/1', 'name': 'aaa'},
+            ],
+            response.json,
+        )
 
     def test_sort_by_related_field(self):
         response = self.client.post('/type', data={"name": "aaa"})
@@ -509,11 +611,9 @@ class SQLAlchemySortTestCase(BaseTestCase):
         response = self.client.post('/type', data={"name": "bbb"})
         self.assert200(response)
         bbb_uri = response.json["$uri"]
-        self.client.post(
-            '/machine', data={"name": "foo", "type": {"$ref": aaa_uri}})
+        self.client.post('/machine', data={"name": "foo", "type": {"$ref": aaa_uri}})
         self.assert200(response)
-        self.client.post(
-            '/machine', data={"name": "bar", "type": {"$ref": bbb_uri}})
+        self.client.post('/machine', data={"name": "bar", "type": {"$ref": bbb_uri}})
         self.assert200(response)
         response = self.client.get('/machine?sort={"type": true}')
         self.assert200(response)
@@ -581,7 +681,8 @@ class QueryOptionsSQLAlchemyTestCase(BaseTestCase):
         aaa_uri = response.json["$uri"]
 
         response = self.client.post(
-            '/machine', data={"name": "foo", "type": {"$ref": aaa_uri}})
+            '/machine', data={"name": "foo", "type": {"$ref": aaa_uri}}
+        )
         self.assert200(response)
         machine_uri = response.json['$uri']
 
@@ -590,10 +691,12 @@ class QueryOptionsSQLAlchemyTestCase(BaseTestCase):
             self.assert200(response)
         self.assertJSONEqual(
             response.json,
-            {'$type': 'type',
-             '$uri': aaa_uri,
-             'machines': [{'$ref': machine_uri}],
-             'name': 'aaa',
-             'version': None,
-             })
+            {
+                '$type': 'type',
+                '$uri': aaa_uri,
+                'machines': [{'$ref': machine_uri}],
+                'name': 'aaa',
+                'version': None,
+            },
+        )
         counter.assert_count(1)

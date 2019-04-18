@@ -1,11 +1,26 @@
 import datetime
 import six
 from werkzeug.utils import cached_property
-from .fields import String, Boolean, Number, Integer, Date, DateTime, DateString, DateTimeString, Array, Object, Uri, ItemUri, ItemType
+from .fields import (
+    String,
+    Boolean,
+    Number,
+    Integer,
+    Date,
+    DateTime,
+    DateString,
+    DateTimeString,
+    Array,
+    Object,
+    Uri,
+    ItemUri,
+    ItemType,
+)
 from .instances import Pagination
 from .exceptions import ItemNotFound
 from .filters import FILTER_NAMES, FILTERS_BY_TYPE, filters_for_fields
 import decimal
+
 
 class Manager(object):
     """
@@ -13,6 +28,7 @@ class Manager(object):
     :param flask_potion.resource.Resource resource: resource class
     :param model: model read from ``Meta.model`` or ``None``
     """
+
     FILTER_NAMES = FILTER_NAMES
     FILTERS_BY_TYPE = FILTERS_BY_TYPE
     PAGINATION_TYPES = (Pagination,)
@@ -49,24 +65,41 @@ class Manager(object):
 
     def _init_filters(self, resource, meta):
         fields = resource.schema.fields
-        field_filters = filters_for_fields(resource.schema.readable_fields,
-                                           meta.filters,
-                                           filter_names=self.FILTER_NAMES,
-                                           filters_by_type=self.FILTERS_BY_TYPE)
+        field_filters = filters_for_fields(
+            resource.schema.readable_fields,
+            meta.filters,
+            filter_names=self.FILTER_NAMES,
+            filters_by_type=self.FILTERS_BY_TYPE,
+        )
         self.filters = {
             field_name: {
                 name: self._init_filter(filter, name, fields[field_name], field_name)
                 for name, filter in field_filters.items()
-                }
+            }
             for field_name, field_filters in field_filters.items()
         }
 
     def _is_sortable_field(self, field):
-        return isinstance(field, (String, Boolean, Number, Integer, Date, DateTime, DateString, DateTimeString, Uri, ItemUri))
+        return isinstance(
+            field,
+            (
+                String,
+                Boolean,
+                Number,
+                Integer,
+                Date,
+                DateTime,
+                DateString,
+                DateTimeString,
+                Uri,
+                ItemUri,
+            ),
+        )
 
     def _init_key_converters(self, resource, meta):
         if 'natural_key' in meta:
             from flask_potion.natural_keys import PropertyKey, PropertiesKey
+
             if isinstance(meta.natural_key, str):
                 meta['key_converters'] += (PropertyKey(meta.natural_key),)
             elif isinstance(meta.natural_key, (list, tuple)):
@@ -78,7 +111,10 @@ class Manager(object):
             for nk in meta.key_converters:
                 if nk.matcher_type() in meta.key_converters_by_type:
                     raise RuntimeError(
-                        'Multiple keys of type {} defined for {}'.format(nk.matcher_type(), meta.name))
+                        'Multiple keys of type {} defined for {}'.format(
+                            nk.matcher_type(), meta.name
+                        )
+                    )
                 meta.key_converters_by_type[nk.matcher_type()] = nk
 
     def _post_init(self, resource, meta):
@@ -103,12 +139,16 @@ class Manager(object):
                 decimal.Decimal: Number,
             }[python_type]
         except KeyError:
-            raise RuntimeError('No appropriate field class for "{}" type found'.format(python_type))
+            raise RuntimeError(
+                'No appropriate field class for "{}" type found'.format(python_type)
+            )
 
     def get_field_comparators(self, field):
         pass
 
-    def relation_instances(self, item, attribute, target_resource, page=None, per_page=None):
+    def relation_instances(
+        self, item, attribute, target_resource, page=None, per_page=None
+    ):
         """
 
         :param item:
@@ -289,7 +329,9 @@ class RelationalManager(Manager):
             return []
 
         if where:
-            expressions = [self._expression_for_condition(condition) for condition in where]
+            expressions = [
+                self._expression_for_condition(condition) for condition in where
+            ]
             query = self._query_filter(query, self._and_expression(expressions))
 
         return self._query_order_by(query, sort)

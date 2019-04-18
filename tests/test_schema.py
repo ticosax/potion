@@ -4,16 +4,16 @@ from flask_potion import fields, Resource
 from flask_potion.exceptions import ValidationError
 from flask_potion.schema import Schema, FieldSet, RequestMustBeJSON
 from sys import version_info
+
 if version_info.major < 3:
     from StringIO import StringIO
 else:
     from io import StringIO
 
-class SchemaTestCase(TestCase):
 
+class SchemaTestCase(TestCase):
     def test_schema_class(self):
         class FooSchema(Schema):
-
             def __init__(self, schema):
                 self._schema = schema
 
@@ -24,8 +24,8 @@ class SchemaTestCase(TestCase):
             "type": "object",
             "properties": {
                 "name": {"type": "string"},
-                "createdAt": {"type": "string", "format": "date-time"}
-            }
+                "createdAt": {"type": "string", "format": "date-time"},
+            },
         }
 
         foo_request = {
@@ -34,9 +34,9 @@ class SchemaTestCase(TestCase):
                 "name": {"type": "string", "minLength": 3},
                 "properties": {
                     "type": "object",
-                    "additionalProperties": {"type": "string"}
-                }
-            }
+                    "additionalProperties": {"type": "string"},
+                },
+            },
         }
 
         foo = FooSchema((foo_response, foo_request))
@@ -53,37 +53,28 @@ class SchemaTestCase(TestCase):
         with self.assertRaises(ValidationError) as cx:
             bar.convert("True")
 
-        self.assertEqual({
-            "name": "Foo",
-            "properties": {
-                "is": "foo"
-            }
-        }, foo.convert({
-            "name": "Foo",
-            "properties": {
-                "is": "foo"
-            }
-        }))
+        self.assertEqual(
+            {"name": "Foo", "properties": {"is": "foo"}},
+            foo.convert({"name": "Foo", "properties": {"is": "foo"}}),
+        )
 
         with Flask(__name__).app_context():
             with self.assertRaises(ValidationError) as cx:
-                foo.convert({
-                    "name": "Foo",
-                    "properties": {
-                        "age": 12
-                    }})
+                foo.convert({"name": "Foo", "properties": {"age": 12}})
 
-            self.assertEqual({
-                                 'errors': [
-                                     {
-                                         'path': ('properties', 'age'),
-                                         'validationOf': {'type': 'string'}
-                                     }
-                                 ],
-                                 'message': 'Bad Request',
-                                 'status': 400
-                             }, cx.exception.as_dict())
-
+            self.assertEqual(
+                {
+                    'errors': [
+                        {
+                            'path': ('properties', 'age'),
+                            'validationOf': {'type': 'string'},
+                        }
+                    ],
+                    'message': 'Bad Request',
+                    'status': 400,
+                },
+                cx.exception.as_dict(),
+            )
 
     def test_schema_class_parse_request(self):
         pass
@@ -97,6 +88,7 @@ class SchemaTestCase(TestCase):
     def test_fieldset_rebind(self):
         class FooResource(Resource):
             pass
+
         class BarResource(Resource):
             pass
 
@@ -127,20 +119,24 @@ class SchemaTestCase(TestCase):
     def test_fieldset_format(self):
         self.assertEqual(
             {"number": 42, "constant": "constant"},
-            FieldSet({
-                "number": fields.Number(),
-                "constant": fields.String(io='r'),
-                "secret": fields.String(io='w'),
-            }).format({"number": 42, "constant": "constant", "secret": "secret"})
+            FieldSet(
+                {
+                    "number": fields.Number(),
+                    "constant": fields.String(io='r'),
+                    "secret": fields.String(io='w'),
+                }
+            ).format({"number": 42, "constant": "constant", "secret": "secret"}),
         )
 
     def test_fieldset_schema_io(self):
-        fs = FieldSet({
-            "id": fields.Number(io='r'),
-            "name": fields.String(),
-            "secret": fields.String(io='c'),
-            "updateOnly": fields.String(io='u'),
-        })
+        fs = FieldSet(
+            {
+                "id": fields.Number(io='r'),
+                "name": fields.String(),
+                "secret": fields.String(io='c'),
+                "updateOnly": fields.String(io='u'),
+            }
+        )
 
         self.assertEqual(
             {
@@ -148,8 +144,10 @@ class SchemaTestCase(TestCase):
                 "properties": {
                     "id": {"type": "number", "readOnly": True},
                     "name": {"type": "string"},
-                }
-            }, fs.response)
+                },
+            },
+            fs.response,
+        )
 
         self.assertEqual(
             {
@@ -157,15 +155,16 @@ class SchemaTestCase(TestCase):
                 "additionalProperties": False,
                 "properties": {
                     "name": {"type": "string"},
-                    "updateOnly": {"type": "string"}
-                }
-            }, fs.update)
+                    "updateOnly": {"type": "string"},
+                },
+            },
+            fs.update,
+        )
 
         self.assertEqual(
-            {
-                "name": {"type": "string"},
-                "secret": {"type": "string"}
-            }, fs.create['properties'])
+            {"name": {"type": "string"}, "secret": {"type": "string"}},
+            fs.create['properties'],
+        )
 
         self.assertEqual({"name", "secret"}, set(fs.create['required']))
 

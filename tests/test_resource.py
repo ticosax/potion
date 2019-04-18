@@ -4,13 +4,11 @@ from tests import BaseTestCase
 
 
 class ResourceTestCase(BaseTestCase):
-
     def setUp(self):
         super(ResourceTestCase, self).setUp()
         self.api = Api(self.app)
 
     def test_resource(self):
-
         class FooResource(Resource):
             class Schema:
                 name = fields.String()
@@ -20,11 +18,7 @@ class ResourceTestCase(BaseTestCase):
 
         self.api.add_resource(FooResource)
 
-        #self.assertEqual(['create', 'update', 'schema'], list(FooResource.routes.()))
+        # self.assertEqual(['create', 'update', 'schema'], list(FooResource.routes.()))
 
         data, code, headers = FooResource().described_by()
-        self.assertEqual({
-                             "name": {
-                                 "type": "string"
-                             }
-                         }, data["properties"])
+        self.assertEqual({"name": {"type": "string"}}, data["properties"])

@@ -19,6 +19,7 @@ class ResourceReference(object):
             return binding
 
         from .resource import ModelResource
+
         if inspect.isclass(name) and issubclass(name, ModelResource):
             return name
 
@@ -38,8 +39,16 @@ class ResourceReference(object):
             pass
 
         if binding and binding.api:
-            raise RuntimeError('Resource named "{}" is not registered with the Api it is bound to.'.format(name))
-        raise RuntimeError('Resource named "{}" cannot be found; the reference is not bound to an Api.'.format(name))
+            raise RuntimeError(
+                'Resource named "{}" is not registered with the Api it is bound to.'.format(
+                    name
+                )
+            )
+        raise RuntimeError(
+            'Resource named "{}" cannot be found; the reference is not bound to an Api.'.format(
+                name
+            )
+        )
 
     def __repr__(self):
         return "<ResourceReference '{}'>".format(self.value)
@@ -60,8 +69,12 @@ class ResourceBound(object):
         return self
 
     def rebind(self, resource):
-        raise NotImplementedError('{} is already bound to {}'
-                                  ' and does not support rebinding to {}'.format(repr(self), self.resource, resource))
+        raise NotImplementedError(
+            '{} is already bound to {}'
+            ' and does not support rebinding to {}'.format(
+                repr(self), self.resource, resource
+            )
+        )
 
 
 def _bind_schema(schema, resource):

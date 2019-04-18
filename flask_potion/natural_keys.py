@@ -9,7 +9,6 @@ from .utils import route_from, get_value, compat_escape
 
 
 class Key(Schema, ResourceBound):
-
     def matcher_type(self):
         type_ = self.response['type']
         if isinstance(type_, six.string_types):
@@ -24,7 +23,6 @@ class Key(Schema, ResourceBound):
 
 
 class RefKey(Key):
-
     def matcher_type(self):
         return 'object'
 
@@ -34,16 +32,24 @@ class RefKey(Key):
             "properties": {
                 "$ref": {
                     "type": "string",
+<<<<<<< HEAD
                     "pattern": r"^{}\/[^/]+$".format(compat_escape(self.resource.route_prefix))
+=======
+                    "pattern": "^{}\/[^/]+$".format(
+                        re.escape(self.resource.route_prefix)
+                    ),
+>>>>>>> make project pep8 compliant
                 }
                 # TODO consider replacing with {$type: foo, $value: 123}
             },
-            "additionalProperties": False
+            "additionalProperties": False,
         }
 
     def _item_uri(self, resource, item):
         # return url_for('{}.instance'.format(self.resource.meta.id_attribute, item, None), get_value(self.resource.meta.id_attribute, item, None))
-        return '{}/{}'.format(resource.route_prefix, get_value(resource.manager.id_attribute, item, None))
+        return '{}/{}'.format(
+            resource.route_prefix, get_value(resource.manager.id_attribute, item, None)
+        )
 
     def format(self, item):
         return {"$ref": self._item_uri(self.resource, item)}
@@ -59,7 +65,6 @@ class RefKey(Key):
 
 
 class PropertyKey(Key):
-
     def __init__(self, property):
         self.property = property
 
@@ -77,17 +82,17 @@ class PropertyKey(Key):
         return self.resource.manager.filters[self.property][None]
 
     def convert(self, value):
-        return self.resource.manager.first(where=[Condition(self.property, self._field_filter, value)])
+        return self.resource.manager.first(
+            where=[Condition(self.property, self._field_filter, value)]
+        )
 
 
 class PropertiesKey(Key):
-
     def __init__(self, *properties):
         self.properties = properties
 
     def matcher_type(self):
         return 'array'
-
 
     def rebind(self, resource):
         return self.__class__(*self.properties).bind(resource)
@@ -96,7 +101,7 @@ class PropertiesKey(Key):
         return {
             "type": "array",
             "items": [self.resource.schema.fields[p].request for p in self.properties],
-            "additionalItems": False
+            "additionalItems": False,
         }
 
     def format(self, item):
@@ -107,14 +112,15 @@ class PropertiesKey(Key):
         return self.resource.manager.filters
 
     def convert(self, value):
-        return self.resource.manager.first(where=[
-            Condition(property, self._field_filters[property][None], value[i])
-            for i, property in enumerate(self.properties)
-        ])
+        return self.resource.manager.first(
+            where=[
+                Condition(property, self._field_filters[property][None], value[i])
+                for i, property in enumerate(self.properties)
+            ]
+        )
 
 
 class IDKey(Key):
-
     def _on_bind(self, resource):
         self.id_field = resource.manager.id_field
 

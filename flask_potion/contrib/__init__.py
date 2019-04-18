@@ -1,4 +1,2 @@
 
-__all__ = (
-    'principals',
-)
+__all__ = ('principals',)

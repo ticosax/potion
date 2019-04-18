@@ -21,8 +21,9 @@ HTTP_METHOD_VERB_DEFAULTS = {
     'PUT': 'create',
     'POST': 'create',
     'PATCH': 'update',
-    'DELETE': 'destroy'
+    'DELETE': 'destroy',
 }
+
 
 def url_rule_to_uri_pattern(rule):
     # TODO convert from underscore to camelCase
@@ -114,18 +115,20 @@ class Route(object):
 
     """
 
-    def __init__(self,
-                 method=None,
-                 view_func=None,
-                 rule=None,
-                 attribute=None,
-                 rel=None,
-                 title=None,
-                 description=None,
-                 schema=None,
-                 response_schema=None,
-                 format_response=True,
-                 success_code=None):
+    def __init__(
+        self,
+        method=None,
+        view_func=None,
+        rule=None,
+        attribute=None,
+        rel=None,
+        title=None,
+        description=None,
+        schema=None,
+        response_schema=None,
+        format_response=True,
+        success_code=None,
+    ):
         self.rel = rel
         self.rule = rule
         self.method = method
@@ -141,7 +144,9 @@ class Route(object):
         annotations = getattr(view_func, '__annotations__', None)
 
         if isinstance(annotations, dict) and len(annotations):
-            self.request_schema = FieldSet({name: field for name, field in annotations.items() if name != 'return'})
+            self.request_schema = FieldSet(
+                {name: field for name, field in annotations.items() if name != 'return'}
+            )
             self.response_schema = annotations.get('return', response_schema)
         else:
             self.request_schema = schema
@@ -170,11 +175,18 @@ class Route(object):
         response_schema = _bind_schema(self.response_schema, resource)
 
         # NOTE "href" for rel="instances" MUST NOT be relative; others MAY BE relative
-        schema = OrderedDict([
-            ("rel", self.relation),
-            ("href", url_rule_to_uri_pattern(self.rule_factory(resource, relative=False))),
-            ("method", self.method)
-        ])
+        schema = OrderedDict(
+            [
+                ("rel", self.relation),
+                (
+                    "href",
+                    url_rule_to_uri_pattern(
+                        self.rule_factory(resource, relative=False)
+                    ),
+                ),
+                ("method", self.method),
+            ]
+        )
 
         if self.title:
             schema["title"] = self.title
@@ -187,30 +199,34 @@ class Route(object):
             schema["targetSchema"] = response_schema.response
         return schema
 
-    def for_method(self,
-                   method,
-                   view_func,
-                   rel=None,
-                   title=None,
-                   description=None,
-                   schema=None,
-                   response_schema=None,
-                   **kwargs):
+    def for_method(
+        self,
+        method,
+        view_func,
+        rel=None,
+        title=None,
+        description=None,
+        schema=None,
+        response_schema=None,
+        **kwargs
+    ):
 
         attribute = kwargs.pop('attribute', self.attribute)
         format_response = kwargs.pop('format_response', self.format_response)
 
-        instance = self.__class__(method,
-                                  view_func,
-                                  rule=self.rule,
-                                  rel=rel,
-                                  title=title,
-                                  description=description,
-                                  schema=schema,
-                                  response_schema=response_schema,
-                                  attribute=attribute,
-                                  format_response=format_response,
-                                  **kwargs)
+        instance = self.__class__(
+            method,
+            view_func,
+            rule=self.rule,
+            rel=rel,
+            title=title,
+            description=description,
+            schema=schema,
+            response_schema=response_schema,
+            attribute=attribute,
+            format_response=format_response,
+            **kwargs
+        )
 
         instance._related_routes = self._related_routes + (self,)
         return instance
@@ -366,25 +382,31 @@ class ItemAttributeRoute(RouteSet):
         attribute = field.attribute or route.attribute
 
         if "r" in io:
+
             def read_attribute(resource, item):
                 return get_value(attribute, item, field.default)
 
-            yield route.for_method('GET',
-                                   read_attribute,
-                                   response_schema=field,
-                                   rel=to_camel_case('read_{}'.format(route.attribute)))
+            yield route.for_method(
+                'GET',
+                read_attribute,
+                response_schema=field,
+                rel=to_camel_case('read_{}'.format(route.attribute)),
+            )
 
         if "u" in io:
+
             def update_attribute(resource, item, value):
                 attribute = field.attribute or route.attribute
                 item = resource.manager.update(item, {attribute: value})
                 return get_value(attribute, item, field.default)
 
-            yield route.for_method('POST',
-                                   update_attribute,
-                                   schema=field,
-                                   response_schema=field,
-                                   rel=to_camel_case('update_{}'.format(route.attribute)))
+            yield route.for_method(
+                'POST',
+                update_attribute,
+                schema=field,
+                response_schema=field,
+                rel=to_camel_case('update_{}'.format(route.attribute)),
+            )
 
 
 class Relation(RouteSet, ResourceBound):
@@ -407,47 +429,60 @@ class Relation(RouteSet, ResourceBound):
         io = self.io
         rule = '/{}'.format(attribute_to_route_uri(self.attribute))
 
-        relation_route = ItemRoute(rule='{}/<{}:target_id>'.format(rule, self.target.meta.id_converter))
+        relation_route = ItemRoute(
+            rule='{}/<{}:target_id>'.format(rule, self.target.meta.id_converter)
+        )
         relations_route = ItemRoute(rule=rule)
 
         if "r" in io:
-            def relation_instances(resource, item, page, per_page):
-                return resource.manager.relation_instances(item,
-                                                           self.attribute,
-                                                           self.target,
-                                                           page,
-                                                           per_page)
 
-            yield relations_route.for_method('GET',
-                                             relation_instances,
-                                             rel=self.attribute,
-                                             response_schema=RelationInstances(self.target),
-                                             schema=FieldSet({
-                                                 "page": Integer(minimum=1, default=1),
-                                                 "per_page": Integer(minimum=1,
-                                                                     default=20,  # FIXME use API reference
-                                                                     maximum=50)
-                                             }))
+            def relation_instances(resource, item, page, per_page):
+                return resource.manager.relation_instances(
+                    item, self.attribute, self.target, page, per_page
+                )
+
+            yield relations_route.for_method(
+                'GET',
+                relation_instances,
+                rel=self.attribute,
+                response_schema=RelationInstances(self.target),
+                schema=FieldSet(
+                    {
+                        "page": Integer(minimum=1, default=1),
+                        "per_page": Integer(
+                            minimum=1, default=20, maximum=50  # FIXME use API reference
+                        ),
+                    }
+                ),
+            )
 
         if "w" in io or "u" in io:
+
             def relation_add(resource, item, target_item):
-                resource.manager.relation_add(item, self.attribute, self.target, target_item)
+                resource.manager.relation_add(
+                    item, self.attribute, self.target, target_item
+                )
                 resource.manager.commit()
                 return target_item
 
-            yield relations_route.for_method('POST',
-                                             relation_add,
-                                             rel=to_camel_case('add_{}'.format(self.attribute)),
-                                             response_schema=ToOne(self.target),
-                                             schema=ToOne(self.target))
+            yield relations_route.for_method(
+                'POST',
+                relation_add,
+                rel=to_camel_case('add_{}'.format(self.attribute)),
+                response_schema=ToOne(self.target),
+                schema=ToOne(self.target),
+            )
 
             def relation_remove(resource, item, target_id):
                 target_item = self.target.manager.read(target_id)
-                resource.manager.relation_remove(item, self.attribute, self.target, target_item)
+                resource.manager.relation_remove(
+                    item, self.attribute, self.target, target_item
+                )
                 resource.manager.commit()
                 return None, 204
 
-            yield relation_route.for_method('DELETE',
-                                            relation_remove,
-                                            rel=to_camel_case('remove_{}'.format(self.attribute)))
-
+            yield relation_route.for_method(
+                'DELETE',
+                relation_remove,
+                rel=to_camel_case('remove_{}'.format(self.attribute)),
+            )

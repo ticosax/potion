@@ -10,6 +10,7 @@ from flask_potion.utils import get_value, route_from, compat_escape
 from flask_potion.reference import ResourceReference, ResourceBound, _bind_schema
 from flask_potion.schema import Schema
 
+
 class Raw(Schema):
     """
     This is the base class for all field types, can be given any JSON-schema.
@@ -28,7 +29,16 @@ class Raw(Schema):
     :param description: optional description for JSON schema
     """
 
-    def __init__(self, schema, io="rw", default=None, attribute=None, nullable=False, title=None, description=None):
+    def __init__(
+        self,
+        schema,
+        io="rw",
+        default=None,
+        attribute=None,
+        nullable=False,
+        title=None,
+        description=None,
+    ):
         self._schema = schema
         self._default = default
         self.attribute = attribute
@@ -61,16 +71,22 @@ class Raw(Schema):
                     schema["type"].append("null")
 
             if "anyOf" in schema:
-                if not any("null" in choice.get("type", []) for choice in schema["anyOf"]):
+                if not any(
+                    "null" in choice.get("type", []) for choice in schema["anyOf"]
+                ):
                     schema["anyOf"].append({"type": "null"})
             elif "oneOf" in schema:
-                if not any("null" in choice.get("type", []) for choice in schema["oneOf"]):
+                if not any(
+                    "null" in choice.get("type", []) for choice in schema["oneOf"]
+                ):
                     schema["oneOf"].append({"type": "null"})
             elif "type" not in schema:
                 if len(schema) == 1 and "$ref" in schema:
                     schema = {"anyOf": [schema, {"type": "null"}]}
                 else:
-                    current_app.logger.warn('{} is nullable but "null" type cannot be added'.format(self))
+                    current_app.logger.warn(
+                        '{} is nullable but "null" type cannot be added'.format(self)
+                    )
 
         for attr in ("default", "title", "description"):
             value = getattr(self, attr)
@@ -116,9 +132,15 @@ class Raw(Schema):
         elif isinstance(schema, tuple):
             read_schema, write_schema = schema
         else:
-            return self._finalize_schema(schema, "r"), self._finalize_schema(schema, "w")
+            return (
+                self._finalize_schema(schema, "r"),
+                self._finalize_schema(schema, "w"),
+            )
 
-        return self._finalize_schema(read_schema, "r"), self._finalize_schema(write_schema, "w")
+        return (
+            self._finalize_schema(read_schema, "r"),
+            self._finalize_schema(write_schema, "w"),
+        )
 
     def format(self, value):
         """
@@ -157,8 +179,13 @@ class Any(Raw):
     """
     A field type that allows any value.
     """
+
     def __init__(self, **kwargs):
-        super(Any, self).__init__({"type": ["null", "string", "number", "boolean", "object", "array"]}, **kwargs)
+        super(Any, self).__init__(
+            {"type": ["null", "string", "number", "boolean", "object", "array"]},
+            **kwargs
+        )
+
 
 def _field_from_object(parent, cls_or_instance):
     # --- start of Flask-RESTful code ---
@@ -171,7 +198,11 @@ def _field_from_object(parent, cls_or_instance):
     else:
         container = cls_or_instance
     if not isinstance(container, Schema):
-        raise RuntimeError('{} expected Raw or Schema, but got {}'.format(parent, container.__class__.__name__))
+        raise RuntimeError(
+            '{} expected Raw or Schema, but got {}'.format(
+                parent, container.__class__.__name__
+            )
+        )
     if not isinstance(container, Raw):
         container = Raw(container)
     # --- end of Flask-RESTful code ---
@@ -214,15 +245,28 @@ class Array(Raw, ResourceBound):
     :param bool unique: if ``True``, all values in the list must be unique
     """
 
-    def __init__(self, cls_or_instance, min_items=None, max_items=None, unique=None, **kwargs):
+    def __init__(
+        self, cls_or_instance, min_items=None, max_items=None, unique=None, **kwargs
+    ):
         self.container = container = _field_from_object(self, cls_or_instance)
 
         schema_properties = [('type', 'array')]
-        schema_properties += [(k, v) for k, v in [('minItems', min_items), ('maxItems', max_items), ('uniqueItems', unique)] if v is not None]
+        schema_properties += [
+            (k, v)
+            for k, v in [
+                ('minItems', min_items),
+                ('maxItems', max_items),
+                ('uniqueItems', unique),
+            ]
+            if v is not None
+        ]
         schema = lambda s: dict([('items', s)] + schema_properties)
 
-        super(Array, self).__init__(lambda: (schema(container.response), schema(container.request)),
-                                    default=kwargs.pop('default', list), **kwargs)
+        super(Array, self).__init__(
+            lambda: (schema(container.response), schema(container.request)),
+            default=kwargs.pop('default', list),
+            **kwargs
+        )
 
     def bind(self, resource):
         if isinstance(self.container, ResourceBound):
@@ -259,7 +303,14 @@ class Object(Raw, ResourceBound):
     :param Raw additional_properties: field class or instance
     """
 
-    def __init__(self, properties=None, pattern=None, pattern_properties=None, additional_properties=None, **kwargs):
+    def __init__(
+        self,
+        properties=None,
+        pattern=None,
+        pattern_properties=None,
+        additional_properties=None,
+        **kwargs
+    ):
         self.properties = None
         self.pattern_properties = None
         self.additional_properties = None
@@ -281,7 +332,9 @@ class Object(Raw, ResourceBound):
         if isinstance(pattern_properties, (type, Raw)):
             self.pattern_properties = _field_from_object(self, pattern_properties)
         elif isinstance(pattern_properties, dict):
-            self.pattern_properties = {p: _field_from_object(self, f) for p, f in pattern_properties.items()}
+            self.pattern_properties = {
+                p: _field_from_object(self, f) for p, f in pattern_properties.items()
+            }
 
         def schema():
             request = {"type": "object"}
@@ -289,20 +342,31 @@ class Object(Raw, ResourceBound):
 
             for schema, attr in ((request, "request"), (response, "response")):
                 if self.properties:
-                    schema["properties"] = {key: getattr(field, attr) for key, field in self.properties.items()}
+                    schema["properties"] = {
+                        key: getattr(field, attr)
+                        for key, field in self.properties.items()
+                    }
                 if self.pattern_properties:
-                    schema["patternProperties"] = {pattern: getattr(field, attr)
-                                                   for pattern, field in self.pattern_properties.items()}
+                    schema["patternProperties"] = {
+                        pattern: getattr(field, attr)
+                        for pattern, field in self.pattern_properties.items()
+                    }
                 if self.additional_properties:
-                    schema["additionalProperties"] = getattr(self.additional_properties, attr)
+                    schema["additionalProperties"] = getattr(
+                        self.additional_properties, attr
+                    )
                 else:
                     schema["additionalProperties"] = False
 
             return response, request
 
-        if self.pattern_properties and (len(self.pattern_properties) > 1 or self.additional_properties):
-            raise NotImplementedError("Only one pattern property is currently supported "
-                                      "and it cannot be combined with additionalProperties")
+        if self.pattern_properties and (
+            len(self.pattern_properties) > 1 or self.additional_properties
+        ):
+            raise NotImplementedError(
+                "Only one pattern property is currently supported "
+                "and it cannot be combined with additionalProperties"
+            )
 
         super(Object, self).__init__(schema, **kwargs)
 
@@ -310,13 +374,17 @@ class Object(Raw, ResourceBound):
         if self.properties:
             self.properties = {
                 key: _bind_schema(value, resource)
-                for key, value in self.properties.items()}
+                for key, value in self.properties.items()
+            }
         if self.pattern_properties:
             self.pattern_properties = {
                 key: _bind_schema(value, resource)
-                for key, value in self.pattern_properties.items()}
+                for key, value in self.pattern_properties.items()
+            }
         if self.additional_properties:
-            self.additional_properties = _bind_schema(self.additional_properties, resource)
+            self.additional_properties = _bind_schema(
+                self.additional_properties, resource
+            )
         return self
 
     @cached_property
@@ -329,7 +397,12 @@ class Object(Raw, ResourceBound):
         output = {}
 
         if self.properties:
-            output = {key: field.format(get_value(field.attribute or key, value, field.default)) for key, field in self.properties.items()}
+            output = {
+                key: field.format(
+                    get_value(field.attribute or key, value, field.default)
+                )
+                for key, field in self.properties.items()
+            }
         else:
             output = {}
 
@@ -337,13 +410,25 @@ class Object(Raw, ResourceBound):
             pattern, field = next(iter(self.pattern_properties.items()))
 
             if not self.additional_properties:
-                output.update({k: field.format(v) for k, v in value.items() if k not in self._property_attributes})
+                output.update(
+                    {
+                        k: field.format(v)
+                        for k, v in value.items()
+                        if k not in self._property_attributes
+                    }
+                )
             else:
                 raise NotImplementedError()
                 # TODO match regular expression
         elif self.additional_properties:
             field = self.additional_properties
-            output.update({k: field.format(v) for k, v in value.items() if k not in self._property_attributes})
+            output.update(
+                {
+                    k: field.format(v)
+                    for k, v in value.items()
+                    if k not in self._property_attributes
+                }
+            )
 
         return output
 
@@ -351,21 +436,34 @@ class Object(Raw, ResourceBound):
         result = {}
 
         if self.properties:
-            result = {field.attribute or key: field.convert(instance.get(key, field.default))
-                      for key, field in self.properties.items()}
+            result = {
+                field.attribute or key: field.convert(instance.get(key, field.default))
+                for key, field in self.properties.items()
+            }
 
         if self.pattern_properties:
             pattern, field = next(iter(self.pattern_properties.items()))
 
             if not self.additional_properties:
-                result.update({key: field.convert(value)
-                               for key, value in instance.items() if key not in result})
+                result.update(
+                    {
+                        key: field.convert(value)
+                        for key, value in instance.items()
+                        if key not in result
+                    }
+                )
             else:
                 raise NotImplementedError()
                 # TODO match regular expression
         elif self.additional_properties:
             field = self.additional_properties
-            result.update({key: field.convert(value) for key, value in instance.items() if key not in result})
+            result.update(
+                {
+                    key: field.convert(value)
+                    for key, value in instance.items()
+                    if key not in result
+                }
+            )
 
         return result
 
@@ -397,16 +495,30 @@ class AttributeMapped(Object):
     def formatter(self, value):
         if self.pattern_properties:
             pattern, field = next(iter(self.pattern_properties.items()))
-            return {get_value(self.mapping_attribute, v, None): field.format(v) for v in value}
+            return {
+                get_value(self.mapping_attribute, v, None): field.format(v)
+                for v in value
+            }
         elif self.additional_properties:
-            return {get_value(self.mapping_attribute, v, None): self.additional_properties.format(v) for v in value}
+            return {
+                get_value(
+                    self.mapping_attribute, v, None
+                ): self.additional_properties.format(v)
+                for v in value
+            }
 
     def converter(self, value):
         if self.pattern_properties:
             pattern, field = next(iter(self.pattern_properties.items()))
-            return [self._set_mapping_attribute(field.convert(v), k) for k, v in value.items()]
+            return [
+                self._set_mapping_attribute(field.convert(v), k)
+                for k, v in value.items()
+            ]
         elif self.additional_properties:
-            return [self._set_mapping_attribute(self.additional_properties.convert(v), k) for k, v in value.items()]
+            return [
+                self._set_mapping_attribute(self.additional_properties.convert(v), k)
+                for k, v in value.items()
+            ]
 
 
 class String(Raw):
@@ -420,19 +532,30 @@ class String(Raw):
            package dependencies.
     :param list enum: list of strings with enumeration
     """
+
     url_rule_converter = 'string'
 
-    def __init__(self, min_length=None, max_length=None, pattern=None, enum=None, format=None, **kwargs):
+    def __init__(
+        self,
+        min_length=None,
+        max_length=None,
+        pattern=None,
+        enum=None,
+        format=None,
+        **kwargs
+    ):
         schema = {"type": "string"}
 
         if enum is not None:
             enum = list(enum)
 
-        for v, k in ((min_length, 'minLength'),
-                     (max_length, 'maxLength'),
-                     (pattern, 'pattern'),
-                     (enum, 'enum'),
-                     (format, 'format')):
+        for v, k in (
+            (min_length, 'minLength'),
+            (max_length, 'maxLength'),
+            (pattern, 'pattern'),
+            (enum, 'enum'),
+            (format, 'format'),
+        ):
             if v is not None:
                 schema[k] = v
 
@@ -443,11 +566,14 @@ class UUID(String):
     """
     A field for UUID strings in canonical form.
     """
+
     url_rule_converter = 'string'
     UUID_REGEX = "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}"
 
     def __init__(self, **kwargs):
-        super(UUID, self).__init__(min_length=36, max_length=36, pattern=self.UUID_REGEX, **kwargs)
+        super(UUID, self).__init__(
+            min_length=36, max_length=36, pattern=self.UUID_REGEX, **kwargs
+        )
 
 
 try:
@@ -486,15 +612,14 @@ class Date(Raw):
 
     def __init__(self, **kwargs):
         # TODO is a 'format' required for "date"
-        super(Date, self).__init__({
-                                       "type": "object",
-                                       "properties": {
-                                           "$date": {
-                                               "type": "integer"
-                                           }
-                                       },
-                                       "additionalProperties": False
-                                   }, **kwargs)
+        super(Date, self).__init__(
+            {
+                "type": "object",
+                "properties": {"$date": {"type": "integer"}},
+                "additionalProperties": False,
+            },
+            **kwargs
+        )
 
     def formatter(self, value):
         return {"$date": int(calendar.timegm(value.timetuple()) * 1000)}
@@ -546,7 +671,9 @@ class DateTimeString(Raw):
     """
 
     def __init__(self, **kwargs):
-        super(DateTimeString, self).__init__({"type": "string", "format": "date-time"}, **kwargs)
+        super(DateTimeString, self).__init__(
+            {"type": "string", "format": "date-time"}, **kwargs
+        )
 
     def formatter(self, value):
         if value.tzinfo is None:
@@ -603,12 +730,14 @@ class PositiveInteger(Integer):
 
 
 class Number(Raw):
-    def __init__(self,
-                 minimum=None,
-                 maximum=None,
-                 exclusive_minimum=False,
-                 exclusive_maximum=False,
-                 **kwargs):
+    def __init__(
+        self,
+        minimum=None,
+        maximum=None,
+        exclusive_minimum=False,
+        exclusive_maximum=False,
+        **kwargs
+    ):
 
         schema = {"type": "number"}
 
@@ -641,6 +770,7 @@ class ToOne(Raw, ResourceBound):
 
     :param resource: a resource reference
     """
+
     def __init__(self, resource, **kwargs):
         self.target_reference = ResourceReference(resource)
 
@@ -668,7 +798,7 @@ class ToOne(Raw, ResourceBound):
                 nullable=self.nullable,
                 title=self.title,
                 description=self.description,
-                io=self.io
+                io=self.io,
             ).bind(resource)
         else:
             return self
@@ -686,10 +816,11 @@ class ToOne(Raw, ResourceBound):
 
     def converter(self, value):
         for python_type, json_type in (
-                (dict, 'object'),
-                (int, 'integer'),
-                ((list, tuple), 'array'),
-                (six.string_types, 'string')):
+            (dict, 'object'),
+            (int, 'integer'),
+            ((list, tuple), 'array'),
+            (six.string_types, 'string'),
+        ):
             if isinstance(value, python_type):
                 return self.target.meta.key_converters_by_type[json_type].convert(value)
 
@@ -698,6 +829,7 @@ class ToMany(Array):
     """
     Like :class:`ToOne`, but for arrays of references.
     """
+
     def __init__(self, resource, **kwargs):
         super(ToMany, self).__init__(ToOne(resource, nullable=False), **kwargs)
 
@@ -718,7 +850,9 @@ class Inline(Raw, ResourceBound):
             def _response_schema():
                 if self.resource == self.target:
                     return {"$ref": "#"}
-                return {"$ref": self.target.routes["describedBy"].rule_factory(self.target)}
+                return {
+                    "$ref": self.target.routes["describedBy"].rule_factory(self.target)
+                }
 
             if not self.patchable:
                 return _response_schema()
@@ -737,7 +871,7 @@ class Inline(Raw, ResourceBound):
                 nullable=self.nullable,
                 title=self.title,
                 description=self.description,
-                io=self.io
+                io=self.io,
             ).bind(resource)
         else:
             return self
@@ -760,12 +894,12 @@ class ItemType(Raw):
     """
     A string field that formats the name of a resource; read-only.
     """
+
     def __init__(self, resource):
         self.resource = resource
-        super(ItemType, self).__init__(lambda: {
-            "type": "string",
-            "enum": [self.resource.meta.name]
-        }, io="r")
+        super(ItemType, self).__init__(
+            lambda: {"type": "string", "enum": [self.resource.meta.name]}, io="r"
+        )
 
     def format(self, value):
         return self.resource.meta.name
@@ -775,12 +909,19 @@ class ItemUri(Raw):
     """
     A string field that formats the url of a resource item; read-only.
     """
+
     def __init__(self, resource, attribute=None):
         self.target_reference = ResourceReference(resource)
-        super(ItemUri, self).__init__(lambda: {
-            "type": "string",
-            "pattern": r"^{}\/[^/]+$".format(compat_escape(self.target.route_prefix))
-        }, io="r", attribute=attribute)
+        super(ItemUri, self).__init__(
+            lambda: {
+                "type": "string",
+                "pattern": r"^{}\/[^/]+$".format(
+                    compat_escape(self.target.route_prefix)
+                ),
+            },
+            io="r",
+            attribute=attribute,
+        )
 
     @cached_property
     def target(self):

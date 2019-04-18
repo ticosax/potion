@@ -38,36 +38,38 @@ class ErrorMessagesTestCase(BaseTestCase):
     def test_werkzeug_exception(self):
         response = self.client.get('/prefix/error/forbidden')
         self.assert403(response)
-        self.assertEqual({
-            "message": "You don't have the permission to access the requested resource. "
-                       "It is either read-protected or not readable by the server.",
-            "status": 403
-        }, response.json)
+        self.assertEqual(
+            {
+                "message": "You don't have the permission to access the requested resource. "
+                "It is either read-protected or not readable by the server.",
+                "status": 403,
+            },
+            response.json,
+        )
 
     def test_potion_exception(self):
         response = self.client.get('/prefix/error/duplicate-key')
         self.assertStatus(response, 409)
-        self.assertEqual({
-            "message": "Conflict",
-            "status": 409
-        }, response.json)
+        self.assertEqual({"message": "Conflict", "status": 409}, response.json)
 
     def test_potion_exception_custom_message(self):
         response = self.client.get('/prefix/error/custom-message')
         self.assertStatus(response, 500)
-        self.assertEqual({
-            "message": "something went wrong",
-            "status": 500
-        }, response.json)
+        self.assertEqual(
+            {"message": "something went wrong", "status": 500}, response.json
+        )
 
     def test_not_found_exception(self):
         response = self.client.get('/prefix/error/missing')
         self.assert404(response)
-        self.assertEqual({
-            "message": "The requested URL was not found on the server. If you entered "
-                        "the URL manually please check your spelling and try again.",
-            "status": 404
-        }, response.json)
+        self.assertEqual(
+            {
+                "message": "The requested URL was not found on the server. If you entered "
+                "the URL manually please check your spelling and try again.",
+                "status": 404,
+            },
+            response.json,
+        )
 
     def test_exception_outside_api(self):
         response = self.client.get('/missing')

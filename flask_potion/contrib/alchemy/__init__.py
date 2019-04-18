@@ -1,7 +1,3 @@
 from .manager import SQLAlchemyManager
 
-__all__ = (
-    'SQLAlchemyManager',
-    'filters',
-    'fields'
-)
+__all__ = ('SQLAlchemyManager', 'filters', 'fields')

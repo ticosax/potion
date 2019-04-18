@@ -12,6 +12,8 @@ tests_require = [
     'peewee==2.*',
     'nose>=1.1.2',
     'werkzeug>=0.15.0',
+    'flake8',
+    'black',
 ]
 
 setup(

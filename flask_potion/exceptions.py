@@ -1,5 +1,11 @@
 from flask import jsonify, current_app
-from werkzeug.exceptions import Conflict, BadRequest, NotFound, InternalServerError, UnsupportedMediaType
+from werkzeug.exceptions import (
+    Conflict,
+    BadRequest,
+    NotFound,
+    InternalServerError,
+    UnsupportedMediaType,
+)
 from werkzeug.http import HTTP_STATUS_CODES
 
 
@@ -15,10 +21,7 @@ class PotionException(Exception):
             message = str(self)
         else:
             message = HTTP_STATUS_CODES.get(self.status_code, '')
-        return {
-            'status': self.status_code,
-            'message': message
-        }
+        return {'status': self.status_code, 'message': message}
 
     def get_response(self):
         response = jsonify(self.as_dict())
@@ -39,19 +42,20 @@ class ItemNotFound(PotionException):
         dct = super(ItemNotFound, self).as_dict()
 
         if self.id is not None:
-            dct['item'] = {
-                "$type": self.resource.meta.name,
-                "$id": self.id
-            }
+            dct['item'] = {"$type": self.resource.meta.name, "$id": self.id}
         else:
             dct['item'] = {
                 "$type": self.resource.meta.name,
                 "$where": {
                     condition.attribute: {
                         "${}".format(condition.filter.name): condition.value
-                    } if condition.filter.name is not None else condition.value
+                    }
+                    if condition.filter.name is not None
+                    else condition.value
                     for condition in self.where
-                    } if self.where else None
+                }
+                if self.where
+                else None,
             }
         return dct
 
@@ -84,7 +88,7 @@ class ValidationError(PotionException):
         for error in self.errors:
             error_data = {
                 'validationOf': {error.validator: error.validator_value},
-                "path": self._complete_path(error)
+                "path": self._complete_path(error),
             }
 
             if current_app.debug:

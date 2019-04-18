@@ -10,15 +10,12 @@ from tests import BaseTestCase
 
 
 class RelationTestCase(BaseTestCase):
-
     def setUp(self):
         super(RelationTestCase, self).setUp()
         self.api = Api(self.app)
 
     def test_item_route(self):
-
         class Box(ModelResource):
-
             class Schema:
                 description = fields.String()
                 is_open = fields.Boolean(default=False)
@@ -57,12 +54,10 @@ class RelationTestCase(BaseTestCase):
         response = self.client.post('/box/1/open')
 
         self.assert200(response)
-        self.assertEqual({
-            "$id": 1,
-            "$type": "box",
-            "description": "mysterious",
-            "is_open": True
-        }, response.json)
+        self.assertEqual(
+            {"$id": 1, "$type": "box", "description": "mysterious", "is_open": True},
+            response.json,
+        )
 
         response = self.client.get('/box/greet?greeting=Hello')
         self.assertEqual("Hello box!", response.json)
@@ -81,42 +76,33 @@ class RelationTestCase(BaseTestCase):
 
             ingredients = ItemAttributeRoute(
                 fields.Array(
-                    fields.Object({
-                        "ingredient": fields.String(),
-                        "amount": fields.String()
-                    }))
+                    fields.Object(
+                        {"ingredient": fields.String(), "amount": fields.String()}
+                    )
+                )
             )
 
         self.api.add_resource(Recipe)
 
-        response = self.client.post('/recipe', {
-            "name": "spam soup"
-        })
+        response = self.client.post('/recipe', {"name": "spam soup"})
 
-        self.assertEqual({
-            "$id": 1,
-            "$type": "recipe",
-            "name": "spam soup"
-        }, response.json)
+        self.assertEqual(
+            {"$id": 1, "$type": "recipe", "name": "spam soup"}, response.json
+        )
 
         response = self.client.get('/recipe/1/ingredients')
         self.assertEqual([], response.json)
 
-        response = self.client.post('/recipe/1/ingredients', data={
-            "name": "pepper",
-            "amount": "50% by volume"
-        })
+        response = self.client.post(
+            '/recipe/1/ingredients', data={"name": "pepper", "amount": "50% by volume"}
+        )
 
         self.assert200(response)
 
         response = self.client.get('/recipe/1/ingredients')
-        self.assertEqual([{
-            "name": "pepper",
-            "amount": "50% by volume"
-        }], response.json)
+        self.assertEqual([{"name": "pepper", "amount": "50% by volume"}], response.json)
 
     def test_simple_relation(self):
-
         class Person(ModelResource):
             class Schema:
                 first_name = fields.String()
@@ -148,22 +134,18 @@ class RelationTestCase(BaseTestCase):
 
         # self.pp(self.client.get('/group/schema').json)
 
-        response = self.client.post('/group', data={
-            "name": "Amnesiacs"
-        })
+        response = self.client.post('/group', data={"name": "Amnesiacs"})
 
         self.assert200(response)
 
-        response = self.client.post('/person', data={
-            "first_name": "Jane",
-            "last_name": "Doe"
-        })
+        response = self.client.post(
+            '/person', data={"first_name": "Jane", "last_name": "Doe"}
+        )
         self.assert200(response)
 
-        response = self.client.post('/person', data={
-            "first_name": "John",
-            "last_name": "Doe"
-        })
+        response = self.client.post(
+            '/person', data={"first_name": "John", "last_name": "Doe"}
+        )
         self.assert200(response)
 
         response = self.client.get('/group/1')
@@ -171,36 +153,24 @@ class RelationTestCase(BaseTestCase):
 
         response = self.client.get('/person/1')
         self.assert200(response)
-        self.assertJSONEqual({
-                                 '$id': 1,
-                                 '$type': 'person',
-                                 'first_name': 'Jane',
-                                 'last_name': 'Doe'
-                             }, response.json)
+        self.assertJSONEqual(
+            {'$id': 1, '$type': 'person', 'first_name': 'Jane', 'last_name': 'Doe'},
+            response.json,
+        )
 
         response = self.client.get('/group/1/members')
         self.assert200(response)
         self.assertJSONEqual([], response.json)
 
-        response = self.client.post('/group/1/members', data={
-            "$ref": "/person/1"
-        })
+        response = self.client.post('/group/1/members', data={"$ref": "/person/1"})
 
-        self.assertJSONEqual({
-            "$ref": "/person/1"
-        }, response.json)
+        self.assertJSONEqual({"$ref": "/person/1"}, response.json)
 
         response = self.client.get('/group/1/members')
         self.assert200(response)
-        self.assertJSONEqual([
-                                 {
-                                     "$ref": "/person/1"
-                                 }
-                             ], response.json)
+        self.assertJSONEqual([{"$ref": "/person/1"}], response.json)
 
-        response = self.client.post('/group/1/members', data={
-            "$ref": "/person/2"
-        })
+        response = self.client.post('/group/1/members', data={"$ref": "/person/2"})
         self.assert200(response)
 
         response = self.client.delete('/group/1/members/1')
@@ -208,14 +178,9 @@ class RelationTestCase(BaseTestCase):
 
         response = self.client.get('/group/1/members')
         self.assert200(response)
-        self.assertJSONEqual([
-                                 {
-                                     "$ref": "/person/2"
-                                 }
-                             ], response.json)
+        self.assertJSONEqual([{"$ref": "/person/2"}], response.json)
 
     def test_attribute_route(self):
-
         class IngredientResource(ModelResource):
             class Meta:
                 name = "ingredient"
@@ -232,10 +197,12 @@ class RelationTestCase(BaseTestCase):
         class DrinkResource(ModelResource):
             recipe = ItemAttributeRoute(
                 fields.Array(
-                    fields.Object(properties={
-                        "ingredient": fields.ToOne("ingredient"),
-                        "volume": fields.Number()
-                    })
+                    fields.Object(
+                        properties={
+                            "ingredient": fields.ToOne("ingredient"),
+                            "volume": fields.Number(),
+                        }
+                    )
                 )
             )
 
@@ -253,41 +220,40 @@ class RelationTestCase(BaseTestCase):
 
         self.api.add_resource(DrinkResource)
 
-        response = self.client.post("/drink", data={
-            "name": "Gin & tonic"
-        })
+        response = self.client.post("/drink", data={"name": "Gin & tonic"})
 
         self.assert200(response)
 
-        response = self.client.post("/ingredient", data={
-            "name": "gin"
-        })
+        response = self.client.post("/ingredient", data={"name": "gin"})
 
-        response = self.client.post("/ingredient", data={
-            "name": "tonic water"
-        })
+        response = self.client.post("/ingredient", data={"name": "tonic water"})
 
-        response = self.client.post("/drink/1/recipe", data=[
-            {
-                "ingredient": {"$ref": "/ingredient/1"},
-                "volume": 0.6
-            },
-            {
-                "ingredient": {"$ref": "/ingredient/2"},
-                "volume": 0.4
-            }
-        ])
+        response = self.client.post(
+            "/drink/1/recipe",
+            data=[
+                {"ingredient": {"$ref": "/ingredient/1"}, "volume": 0.6},
+                {"ingredient": {"$ref": "/ingredient/2"}, "volume": 0.4},
+            ],
+        )
 
         self.assert200(response)
-        self.assertJSONEqual([{'ingredient': {'$ref': '/ingredient/1'}, 'volume': 0.6},
-                              {'ingredient': {'$ref': '/ingredient/2'}, 'volume': 0.4}], response.json)
-
+        self.assertJSONEqual(
+            [
+                {'ingredient': {'$ref': '/ingredient/1'}, 'volume': 0.6},
+                {'ingredient': {'$ref': '/ingredient/2'}, 'volume': 0.4},
+            ],
+            response.json,
+        )
 
         response = self.client.get("/drink/1/recipe")
         self.assert200(response)
-        self.assertJSONEqual([{'ingredient': {'$ref': '/ingredient/1'}, 'volume': 0.6},
-                              {'ingredient': {'$ref': '/ingredient/2'}, 'volume': 0.4}], response.json)
-
+        self.assertJSONEqual(
+            [
+                {'ingredient': {'$ref': '/ingredient/1'}, 'volume': 0.6},
+                {'ingredient': {'$ref': '/ingredient/2'}, 'volume': 0.4},
+            ],
+            response.json,
+        )
 
     # def test_attribute_set_route
     # def test_attribute_map_route

@@ -6,7 +6,10 @@ from jsonschema import Draft4Validator, ValidationError, FormatChecker
 
 from flask_potion.reference import ResourceBound
 from flask_potion.utils import unpack
-from flask_potion.exceptions import ValidationError as PotionValidationError, RequestMustBeJSON
+from flask_potion.exceptions import (
+    ValidationError as PotionValidationError,
+    RequestMustBeJSON,
+)
 
 
 class Schema(object):
@@ -67,7 +70,6 @@ class Schema(object):
     def _update_validator(self):
         Draft4Validator.check_schema(self.update)
         return Draft4Validator(self.update, format_checker=FormatChecker())
-
 
     def format(self, value):
         """
@@ -130,6 +132,7 @@ class SchemaImpl(Schema):
     def schema(self):
         return self._schema
 
+
 class FieldSet(Schema, ResourceBound):
     """
     A schema representation of a dictionary of :class:`fields.Raw` objects.
@@ -156,10 +159,7 @@ class FieldSet(Schema, ResourceBound):
         return self
 
     def rebind(self, resource):
-        return FieldSet(
-            dict(self.fields),
-            tuple(self.required)
-        ).bind(resource)
+        return FieldSet(dict(self.fields), tuple(self.required)).bind(resource)
 
     def set(self, key, field):
         if self.resource and isinstance(field, ResourceBound):
@@ -169,22 +169,37 @@ class FieldSet(Schema, ResourceBound):
     def _schema(self, patchable=False):
         read_schema = {
             "type": "object",
-            "properties": OrderedDict((
-                (key, field.response) for key, field in self.fields.items() if 'r' in field.io))
+            "properties": OrderedDict(
+                (
+                    (key, field.response)
+                    for key, field in self.fields.items()
+                    if 'r' in field.io
+                )
+            ),
         }
 
         create_schema = {
             "type": "object",
             "additionalProperties": False,
-            "properties": OrderedDict((
-                (key, field.request) for key, field in self.fields.items() if 'c' in field.io))
+            "properties": OrderedDict(
+                (
+                    (key, field.request)
+                    for key, field in self.fields.items()
+                    if 'c' in field.io
+                )
+            ),
         }
 
         update_schema = {
             "type": "object",
             "additionalProperties": False,
-            "properties": OrderedDict((
-                (key, field.request) for key, field in self.fields.items() if 'u' in field.io))
+            "properties": OrderedDict(
+                (
+                    (key, field.request)
+                    for key, field in self.fields.items()
+                    if 'u' in field.io
+                )
+            ),
         }
 
         # TODO figure out logic for required
@@ -210,12 +225,28 @@ class FieldSet(Schema, ResourceBound):
 
     @cached_property
     def all_fields_optional(self):
-        return all(((i.default is not None) or i.nullable for i in (self.fields or {}).values()))
+        return all(
+            (
+                (i.default is not None) or i.nullable
+                for i in (self.fields or {}).values()
+            )
+        )
 
     def format(self, item):
-        return OrderedDict((key, field.output(key, item)) for key, field in self.fields.items() if 'r' in field.io)
+        return OrderedDict(
+            (key, field.output(key, item))
+            for key, field in self.fields.items()
+            if 'r' in field.io
+        )
 
-    def convert(self, instance, update=False, pre_resolved_properties=None, patchable=False, strict=False):
+    def convert(
+        self,
+        instance,
+        update=False,
+        pre_resolved_properties=None,
+        patchable=False,
+        strict=False,
+    ):
         """
         :param instance: JSON-object
         :param pre_resolved_properties: optional dictionary of properties that are already known
@@ -289,4 +320,8 @@ class FieldSet(Schema, ResourceBound):
                 except KeyError:
                     pass
 
-        return self.convert(data, update=request.method in ('PUT', 'PATCH'), patchable=request.method == 'PATCH')
+        return self.convert(
+            data,
+            update=request.method in ('PUT', 'PATCH'),
+            patchable=request.method == 'PATCH',
+        )

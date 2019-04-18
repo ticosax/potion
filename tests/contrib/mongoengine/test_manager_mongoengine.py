@@ -61,8 +61,14 @@ class MongoEngineManagerTestCase(MongoEngineTestCase):
         self.api.add_resource(TypeResource)
 
     def test_field_discovery(self):
-        self.assertEqual(set(self.MachineResource.schema.fields.keys()), {'$id', '$type', 'name', 'type', 'wattage'})
-        self.assertEqual(set(self.TypeResource.schema.fields.keys()), {'$id', '$type', 'name', 'machines'})
+        self.assertEqual(
+            set(self.MachineResource.schema.fields.keys()),
+            {'$id', '$type', 'name', 'type', 'wattage'},
+        )
+        self.assertEqual(
+            set(self.TypeResource.schema.fields.keys()),
+            {'$id', '$type', 'name', 'machines'},
+        )
         self.assertEqual(self.MachineResource.meta.name, 'machine')
         self.assertEqual(self.TypeResource.meta.name, 'type')
 
@@ -84,60 +90,84 @@ class MongoEngineManagerTestCase(MongoEngineTestCase):
     def test_create(self):
         response = self.client.post('/type', data={})
         self.assert400(response)
-        self.assertEqual({
-            "errors": [
-                {
-                    "message": "'name' is a required property",
-                    "path": [],
-                    "validationOf": {
-                        "required": [
-                            "name"
-                        ]
+        self.assertEqual(
+            {
+                "errors": [
+                    {
+                        "message": "'name' is a required property",
+                        "path": [],
+                        "validationOf": {"required": ["name"]},
                     }
-                }
-            ],
-            "message": "Bad Request",
-            "status": 400
-        }, response.json)
+                ],
+                "message": "Bad Request",
+                "status": 400,
+            },
+            response.json,
+        )
 
         response = self.client.post('/type', data={"name": "x-ray"})
         type_id = response.json["$id"]
-        self.assertEqualWithout({'$type': 'type', 'machines': [], "name": "x-ray"}, response.json, without=["$id"])
+        self.assertEqualWithout(
+            {'$type': 'type', 'machines': [], "name": "x-ray"},
+            response.json,
+            without=["$id"],
+        )
 
-        response = self.client.post('/machine',
-                                    data={"name": "Irradiator I", "type": {"$ref": "/type/{}".format(type_id)}})
+        response = self.client.post(
+            '/machine',
+            data={"name": "Irradiator I", "type": {"$ref": "/type/{}".format(type_id)}},
+        )
         machine1_id = response.json["$id"]
         self.assert200(response)
         self.assertEqualWithout(
-            {'$type': 'machine', 'type': {"$ref": "/type/{}".format(type_id)}, "wattage": None, "name": "Irradiator I"},
+            {
+                '$type': 'machine',
+                'type': {"$ref": "/type/{}".format(type_id)},
+                "wattage": None,
+                "name": "Irradiator I",
+            },
             response.json,
-            without=["$id"])
+            without=["$id"],
+        )
 
-        response = self.client.post('/machine', data={"name": "Sol IV", "type": type_id, "wattage": 1.23e45})
+        response = self.client.post(
+            '/machine', data={"name": "Sol IV", "type": type_id, "wattage": 1.23e45}
+        )
         machine2_id = response.json["$id"]
         self.assert200(response)
         self.assertEqualWithout(
-            {'$type': 'machine', 'type': {"$ref": "/type/{}".format(type_id)}, "wattage":  1.23e45, "name": "Sol IV"},
+            {
+                '$type': 'machine',
+                'type': {"$ref": "/type/{}".format(type_id)},
+                "wattage": 1.23e45,
+                "name": "Sol IV",
+            },
             response.json,
-            without=["$id"])
+            without=["$id"],
+        )
 
         response = self.client.get('/type/{}'.format(type_id))
         self.assert200(response)
         self.assertEqualWithout(
-            {'$type': 'type',
-             'machines': [
-                 {'$ref': '/machine/{}'.format(machine1_id)},
-                 {'$ref': '/machine/{}'.format(machine2_id)}
-             ],
-             "name": "x-ray"},
+            {
+                '$type': 'type',
+                'machines': [
+                    {'$ref': '/machine/{}'.format(machine1_id)},
+                    {'$ref': '/machine/{}'.format(machine2_id)},
+                ],
+                "name": "x-ray",
+            },
             response.json,
-            without=["$id"])
+            without=["$id"],
+        )
 
     def test_get(self):
         type_ = lambda v: {"$type": "type", "name": "Type-{}".format(v), "machines": []}
 
         for i in range(1, 10):
-            response = self.client.post('/type', data={"name": "Type-{}".format(i), "machines": []})
+            response = self.client.post(
+                '/type', data={"name": "Type-{}".format(i), "machines": []}
+            )
             self.assert200(response)
             self.assertEqualWithout(type_(i), response.json, without=["$id"])
 
@@ -148,13 +178,18 @@ class MongoEngineManagerTestCase(MongoEngineTestCase):
             response = self.client.get('/type')
             self.assert200(response)
             for i in range(1, i):
-                self.assertEqualWithout(type_(i), response.json[i-1], without=["$id"])
+                self.assertEqualWithout(type_(i), response.json[i - 1], without=["$id"])
 
             response = self.client.get('/type/{}'.format(i + 1))
             self.assert404(response)
-            self.assertJSONEqual({'item': {'$type': 'type', "$id": str(i + 1)},
-                                  'message': 'Not Found',
-                                  'status': 404}, response.json)
+            self.assertJSONEqual(
+                {
+                    'item': {'$type': 'type', "$id": str(i + 1)},
+                    'message': 'Not Found',
+                    'status': 404,
+                },
+                response.json,
+            )
 
     @unittest.SkipTest
     def test_pagination(self):
@@ -169,69 +204,103 @@ class MongoEngineManagerTestCase(MongoEngineTestCase):
         type2_id = response.json["$id"]
         self.assert200(response)
 
-        response = self.client.post('/machine', data={"name": "Robot", "type": type1_id})
+        response = self.client.post(
+            '/machine', data={"name": "Robot", "type": type1_id}
+        )
         machine_id = response.json["$id"]
         self.assert200(response)
         self.assertEqualWithout(
-            {'$type': 'machine', 'type': {"$ref": "/type/{}".format(type1_id)}, "wattage": None, "name": "Robot"},
+            {
+                '$type': 'machine',
+                'type': {"$ref": "/type/{}".format(type1_id)},
+                "wattage": None,
+                "name": "Robot",
+            },
             response.json,
-            without=["$id"])
+            without=["$id"],
+        )
 
         response = self.client.patch('/machine/{}'.format(machine_id), data={})
         self.assert200(response)
 
-        response = self.client.patch('/machine/{}'.format(machine_id), data={"wattage": 10000})
+        response = self.client.patch(
+            '/machine/{}'.format(machine_id), data={"wattage": 10000}
+        )
         self.assert200(response)
         self.assertEqualWithout(
-            {'$type': 'machine', 'type': {"$ref": "/type/{}".format(type1_id)}, "wattage": 10000, "name": "Robot"},
+            {
+                '$type': 'machine',
+                'type': {"$ref": "/type/{}".format(type1_id)},
+                "wattage": 10000,
+                "name": "Robot",
+            },
             response.json,
-            without=["$id"])
+            without=["$id"],
+        )
 
-        response = self.client.patch('/machine/{}'.format(machine_id), data={"type": {"$ref": "/type/{}".format(type2_id)}})
+        response = self.client.patch(
+            '/machine/{}'.format(machine_id),
+            data={"type": {"$ref": "/type/{}".format(type2_id)}},
+        )
         self.assert200(response)
         self.assertEqualWithout(
-            {'$type': 'machine', 'type': {"$ref": "/type/{}".format(type2_id)}, "wattage": 10000, "name": "Robot"},
+            {
+                '$type': 'machine',
+                'type': {"$ref": "/type/{}".format(type2_id)},
+                "wattage": 10000,
+                "name": "Robot",
+            },
             response.json,
-            without=["$id"])
+            without=["$id"],
+        )
 
-        response = self.client.patch('/machine/{}'.format(machine_id), data={"type": None})
+        response = self.client.patch(
+            '/machine/{}'.format(machine_id), data={"type": None}
+        )
         self.assert400(response)
-        self.assertJSONEqual({
-                                 'errors': [
-                                     {
-                                         "message": "None is not valid under any of the given schemas",
-                                         "path": [
-                                             "type"
-                                         ],
-                                         "validationOf": {
-                                             "anyOf": [
-                                                 {
-                                                     "additionalProperties": False,
-                                                     "properties": {
-                                                         "$ref": {
-                                                             "pattern": "^\\/type\\/[^/]+$",
-                                                             "type": "string"
-                                                         }
-                                                     },
-                                                     "type": "object"
-                                                 },
-                                                 {
-                                                     "type": "string"
-                                                 }
-                                             ]
-                                         }
-                                     }
-                                 ],
-                                 'message': 'Bad Request',
-                                 'status': 400
-                             }, response.json)
+        self.assertJSONEqual(
+            {
+                'errors': [
+                    {
+                        "message": "None is not valid under any of the given schemas",
+                        "path": ["type"],
+                        "validationOf": {
+                            "anyOf": [
+                                {
+                                    "additionalProperties": False,
+                                    "properties": {
+                                        "$ref": {
+                                            "pattern": "^\\/type\\/[^/]+$",
+                                            "type": "string",
+                                        }
+                                    },
+                                    "type": "object",
+                                },
+                                {"type": "string"},
+                            ]
+                        },
+                    }
+                ],
+                'message': 'Bad Request',
+                'status': 400,
+            },
+            response.json,
+        )
 
-        response = self.client.patch('/machine/{}'.format(machine_id), data={"name": "Foo"})
+        response = self.client.patch(
+            '/machine/{}'.format(machine_id), data={"name": "Foo"}
+        )
         self.assert200(response)
         self.assertEqualWithout(
-            {'$type': 'machine', 'type': {"$ref": "/type/{}".format(type2_id)}, "wattage": 10000.0, "name": "Foo"},
+            {
+                '$type': 'machine',
+                'type': {"$ref": "/type/{}".format(type2_id)},
+                "wattage": 10000.0,
+                "name": "Foo",
+            },
             response.json,
-            without=["$id"])
+            without=["$id"],
+        )
 
     def test_delete(self):
         self.client.post('/type', data={"name": "A"})
@@ -287,18 +356,25 @@ class MongoEngineRelationTestCase(MongoEngineTestCase):
         response = self.client.post('/group', data={"name": "Foo"})
         group_id = response.json["$id"]
         self.assert200(response)
-        self.assertEqualWithout({'$type': 'group', "name": "Foo"}, response.json, without=["$id"])
+        self.assertEqualWithout(
+            {'$type': 'group', "name": "Foo"}, response.json, without=["$id"]
+        )
 
         response = self.client.post('/user', data={"name": "Bar"})
         user_id = response.json["$id"]
         self.assert200(response)
-        self.assertEqualWithout({'$type': 'user', "name": "Bar"}, response.json, without=["$id"])
+        self.assertEqualWithout(
+            {'$type': 'user', "name": "Bar"}, response.json, without=["$id"]
+        )
 
         response = self.client.get('/group/{}/members'.format(group_id))
         self.assert200(response)
         self.assertJSONEqual([], response.json)
 
-        response = self.client.post('/group/{}/members'.format(group_id), data={"$ref": "/user/{}".format(user_id)})
+        response = self.client.post(
+            '/group/{}/members'.format(group_id),
+            data={"$ref": "/user/{}".format(user_id)},
+        )
         self.assert200(response)
         self.assertJSONEqual({"$ref": "/user/{}".format(user_id)}, response.json)
 
@@ -320,14 +396,21 @@ class MongoEngineRelationTestCase(MongoEngineTestCase):
         response = self.client.post('/user', data={"name": "Foo"})
         user_id = response.json["$id"]
         self.assert200(response)
-        self.assertEqualWithout({'$type': 'user', "name": "Foo"}, response.json, without=["$id"])
+        self.assertEqualWithout(
+            {'$type': 'user', "name": "Foo"}, response.json, without=["$id"]
+        )
 
         response = self.client.post('/user', data={"name": "Bar"})
         children_id = response.json["$id"]
         self.assert200(response)
-        self.assertEqualWithout({'$type': 'user', "name": "Bar"}, response.json, without=["$id"])
+        self.assertEqualWithout(
+            {'$type': 'user', "name": "Bar"}, response.json, without=["$id"]
+        )
 
-        response = self.client.post('/user/{}/children'.format(user_id), data={"$ref": "/user/{}".format(children_id)})
+        response = self.client.post(
+            '/user/{}/children'.format(user_id),
+            data={"$ref": "/user/{}".format(children_id)},
+        )
 
         self.assert200(response)
         self.assertJSONEqual({"$ref": "/user/{}".format(children_id)}, response.json)
@@ -343,7 +426,9 @@ class MongoEngineRelationTestCase(MongoEngineTestCase):
     def test_relationship_delete(self):
         user_id, children_id = self.test_relationship_post()
 
-        response = self.client.delete('/user/{}/children/{}'.format(user_id, children_id))
+        response = self.client.delete(
+            '/user/{}/children/{}'.format(user_id, children_id)
+        )
         self.assertStatus(response, 204)
 
         response = self.client.get('/user/{}/children'.format(user_id))
@@ -360,18 +445,32 @@ class MongoEngineRelationTestCase(MongoEngineTestCase):
             response = self.client.post('/user', data={"name": str(i)})
             self.assert200(response)
             children_ids.append(response.json["$id"])
-            response = self.client.post('/user/{}/children'.format(user_id), data={"$ref": "/user/{}".format(children_ids[i-2])})
+            response = self.client.post(
+                '/user/{}/children'.format(user_id),
+                data={"$ref": "/user/{}".format(children_ids[i - 2])},
+            )
             self.assert200(response)
 
         response = self.client.get('/user/{}/children'.format(user_id))
         self.assert200(response)
-        self.assertJSONEqual([{"$ref": "/user/{}".format(children_ids[i-2])} for i in range(2, 22)], response.json)
+        self.assertJSONEqual(
+            [{"$ref": "/user/{}".format(children_ids[i - 2])} for i in range(2, 22)],
+            response.json,
+        )
 
         response = self.client.get('/user/{}/children?page=3'.format(user_id))
         self.assert200(response)
-        self.assertJSONEqual([{"$ref": "/user/{}".format(children_ids[i-2])} for i in range(42, 50)], response.json)
+        self.assertJSONEqual(
+            [{"$ref": "/user/{}".format(children_ids[i - 2])} for i in range(42, 50)],
+            response.json,
+        )
         self.assertEqual('48', response.headers['X-Total-Count'])
-        self.assertEqual('</user/{}/children?page=3&per_page=20>; rel="self",'
-                         '</user/{}/children?page=1&per_page=20>; rel="first",'
-                         '</user/{}/children?page=2&per_page=20>; rel="prev",'
-                         '</user/{}/children?page=3&per_page=20>; rel="last"'.format(user_id, user_id, user_id, user_id), response.headers['Link'])
+        self.assertEqual(
+            '</user/{}/children?page=3&per_page=20>; rel="self",'
+            '</user/{}/children?page=1&per_page=20>; rel="first",'
+            '</user/{}/children?page=2&per_page=20>; rel="prev",'
+            '</user/{}/children?page=3&per_page=20>; rel="last"'.format(
+                user_id, user_id, user_id, user_id
+            ),
+            response.headers['Link'],
+        )

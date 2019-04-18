@@ -14,7 +14,9 @@ class ApiClient(FlaskClient):
         """
         headers = kw.pop('headers', [])
 
-        if 'data' in kw and (kw.pop('force_json', False) or not isinstance(kw['data'], str)):
+        if 'data' in kw and (
+            kw.pop('force_json', False) or not isinstance(kw['data'], str)
+        ):
             kw['data'] = json.dumps(kw['data'])
             kw['content_type'] = 'application/json'
 
@@ -22,9 +24,10 @@ class ApiClient(FlaskClient):
 
 
 class BaseTestCase(TestCase):
-
     def assertJSONEqual(self, first, second, msg=None):
-        self.assertEqual(json.loads(json.dumps(first)), json.loads(json.dumps(second)), msg)
+        self.assertEqual(
+            json.loads(json.dumps(first)), json.loads(json.dumps(second)), msg
+        )
 
     def _without(self, dct, without):
         return {k: v for k, v in dct.items() if k not in without}
@@ -34,12 +37,12 @@ class BaseTestCase(TestCase):
             self.assertEqual(
                 [self._without(v, without) for v in first],
                 [self._without(v, without) for v in second],
-                msg=msg
+                msg=msg,
             )
         elif isinstance(first, dict) and isinstance(second, dict):
-            self.assertEqual(self._without(first, without),
-                             self._without(second, without),
-                             msg=msg)
+            self.assertEqual(
+                self._without(first, without), self._without(second, without), msg=msg
+            )
         else:
             self.maxDiff = None
             self.assertEqual(first, second)

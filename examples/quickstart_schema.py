@@ -8,6 +8,7 @@ app = Flask(__name__)
 api = Api(app)
 api.add_resource(Resource)
 
+
 class SimpleResource(Resource):
     class Meta:
         name = 'simple'
@@ -19,6 +20,7 @@ class SimpleResource(Resource):
     @Route.POST
     def create(self, value: fields.Number()) -> fields.Inline('self'):
         return {"name": "foo", "value": value}
+
 
 api.add_resource(SimpleResource)
 

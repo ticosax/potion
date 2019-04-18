@@ -9,7 +9,11 @@ except ImportError:
 
 from flask_potion import fields, signals
 from flask_potion.instances import Pagination
-from flask_potion.contrib.peewee.filters import FILTER_NAMES, FILTERS_BY_TYPE, PeeweeBaseFilter
+from flask_potion.contrib.peewee.filters import (
+    FILTER_NAMES,
+    FILTERS_BY_TYPE,
+    PeeweeBaseFilter,
+)
 from flask_potion.exceptions import ItemNotFound, BackendConflict
 from flask_potion.manager import Manager
 from flask_potion.utils import get_value
@@ -19,6 +23,7 @@ class PeeweeManager(Manager):
     """
     A manager for Peewee models.
     """
+
     FILTER_NAMES = FILTER_NAMES
     FILTERS_BY_TYPE = FILTERS_BY_TYPE
 
@@ -57,9 +62,11 @@ class PeeweeManager(Manager):
         pre_declared_fields = {f.attribute or k for k, f in fs.fields.items()}
 
         for name, column in model._meta.fields.items():
-            if (include_fields and name in include_fields) or \
-                    (exclude_fields and name not in exclude_fields) or \
-                    not (include_fields or exclude_fields):
+            if (
+                (include_fields and name in include_fields)
+                or (exclude_fields and name not in exclude_fields)
+                or not (include_fields or exclude_fields)
+            ):
                 if column.primary_key or name in model._meta.rel:
                     continue
                 if name in pre_declared_fields:
@@ -87,13 +94,12 @@ class PeeweeManager(Manager):
                 elif isinstance(column, postgres_ext.ArrayField):
                     field_class = fields.Array
                     args = (fields.String,)
-                elif postgres_ext and \
-                        isinstance(column, postgres_ext.HStoreField):
+                elif postgres_ext and isinstance(column, postgres_ext.HStoreField):
                     field_class = fields.Object
                     args = (fields.String,)
-                elif postgres_ext and \
-                        isinstance(column, (postgres_ext.JSONField,
-                                            postgres_ext.BinaryJSONField)):
+                elif postgres_ext and isinstance(
+                    column, (postgres_ext.JSONField, postgres_ext.BinaryJSONField)
+                ):
                     field_class = fields.Raw
                     kwargs = {"schema": {}}
                 else:
@@ -113,14 +119,15 @@ class PeeweeManager(Manager):
                 if "w" in io and not (column.null or column.default):
                     fs.required.add(name)
 
-                fs.set(
-                    name, field_class(*args, io=io, attribute=name, **kwargs))
+                fs.set(name, field_class(*args, io=io, attribute=name, **kwargs))
 
     def _init_filter(self, filter_class, name, field, attribute):
-        return filter_class(name,
-                            field=field,
-                            attribute=field.attribute or attribute,
-                            column=getattr(self.model, field.attribute or attribute))
+        return filter_class(
+            name,
+            field=field,
+            attribute=field.attribute or attribute,
+            column=getattr(self.model, field.attribute or attribute),
+        )
 
     def _query(self):
         return self.model.select()
@@ -134,17 +141,21 @@ class PeeweeManager(Manager):
             else:
                 yield column.asc()
 
-    def relation_instances(self, item, attribute, target_resource, page=None,
-                           per_page=None):
+    def relation_instances(
+        self, item, attribute, target_resource, page=None, per_page=None
+    ):
         query = getattr(item, attribute)
         if page and per_page:
             # TODO see if this can be better done in one query
-            return Pagination(query.paginate(page, per_page), page, per_page, query.count())
+            return Pagination(
+                query.paginate(page, per_page), page, per_page, query.count()
+            )
         return query
 
     def relation_add(self, item, attribute, target_resource, target_item):
         signals.before_add_to_relation.send(
-            self.resource, item=item, attribute=attribute, child=target_item)
+            self.resource, item=item, attribute=attribute, child=target_item
+        )
 
         relation = getattr(item, attribute)
         if hasattr(relation, 'add'):
@@ -155,11 +166,13 @@ class PeeweeManager(Manager):
             target_item.save()
 
         signals.after_add_to_relation.send(
-            self.resource, item=item, attribute=attribute, child=target_item)
+            self.resource, item=item, attribute=attribute, child=target_item
+        )
 
     def relation_remove(self, item, attribute, target_resource, target_item):
         signals.before_remove_from_relation.send(
-            self.resource, item=item, attribute=attribute, child=target_item)
+            self.resource, item=item, attribute=attribute, child=target_item
+        )
 
         relation = getattr(item, attribute)
         if hasattr(relation, 'remove'):
@@ -170,7 +183,8 @@ class PeeweeManager(Manager):
             target_item.save()
 
         signals.after_remove_from_relation.send(
-            self.resource, item=item, attribute=attribute, child=target_item)
+            self.resource, item=item, attribute=attribute, child=target_item
+        )
 
     def paginated_instances(self, page, per_page, where=None, sort=None):
         query = self.instances(where, sort)
@@ -199,8 +213,7 @@ class PeeweeManager(Manager):
         for key, value in properties.items():
             setattr(item, key, value)
 
-        signals.before_create.send(
-            self.resource, item=item)
+        signals.before_create.send(self.resource, item=item)
 
         try:
             item.save()
@@ -220,12 +233,12 @@ class PeeweeManager(Manager):
 
     def update(self, item, changes, commit=True):
         actual_changes = {
-            key: value for key, value in changes.items()
+            key: value
+            for key, value in changes.items()
             if get_value(key, item, None) != value
-            }
+        }
 
-        signals.before_update.send(
-            self.resource, item=item, changes=actual_changes)
+        signals.before_update.send(self.resource, item=item, changes=actual_changes)
 
         for key, value in changes.items():
             setattr(item, key, value)
@@ -237,15 +250,12 @@ class PeeweeManager(Manager):
                 raise BackendConflict(debug_info=e.args)
             raise BackendConflict()
 
-        signals.after_update.send(
-            self.resource, item=item, changes=actual_changes)
+        signals.after_update.send(self.resource, item=item, changes=actual_changes)
         return item
 
     def delete(self, item):
-        signals.before_delete.send(
-            self.resource, item=item)
+        signals.before_delete.send(self.resource, item=item)
 
         item.delete_instance()
 
-        signals.after_delete.send(
-            self.resource, item=item)
+        signals.after_delete.send(self.resource, item=item)

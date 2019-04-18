@@ -92,59 +92,48 @@ FILTER_NAMES = (
 
 
 FILTERS_BY_TYPE = (
-    (fields.Uri, (
-        EqualFilter,
-        NotEqualFilter,
-        InFilter
-    )),
-    (fields.ItemUri, (
-        EqualFilter,
-        NotEqualFilter,
-        InFilter
-    )),
-    (fields.Boolean, (
-        EqualFilter,
-        NotEqualFilter,
-        InFilter
-    )),
-    (fields.Integer, (
-        EqualFilter,
-        NotEqualFilter,
-        LessThanFilter,
-        LessThanEqualFilter,
-        GreaterThanFilter,
-        GreaterThanEqualFilter,
-        InFilter,
-    )),
-    (fields.Number, (
-        EqualFilter,
-        NotEqualFilter,
-        LessThanFilter,
-        LessThanEqualFilter,
-        GreaterThanFilter,
-        GreaterThanEqualFilter,
-        InFilter,
-    )),
-    (fields.String, (
-        EqualFilter,
-        NotEqualFilter,
-        StringContainsFilter,
-        StringIContainsFilter,
-        StartsWithFilter,
-        IStartsWithFilter,
-        EndsWithFilter,
-        IEndsWithFilter,
-        InFilter,
-    )),
-    (fields.Array, (
-        ContainsFilter,
-    )),
-    (fields.ToOne, (
-        EqualFilter,
-        NotEqualFilter,
-        InFilter,
-    )),
-    (fields.ToMany, (
-        ContainsFilter,
-    )),
+    (fields.Uri, (EqualFilter, NotEqualFilter, InFilter)),
+    (fields.ItemUri, (EqualFilter, NotEqualFilter, InFilter)),
+    (fields.Boolean, (EqualFilter, NotEqualFilter, InFilter)),
+    (
+        fields.Integer,
+        (
+            EqualFilter,
+            NotEqualFilter,
+            LessThanFilter,
+            LessThanEqualFilter,
+            GreaterThanFilter,
+            GreaterThanEqualFilter,
+            InFilter,
+        ),
+    ),
+    (
+        fields.Number,
+        (
+            EqualFilter,
+            NotEqualFilter,
+            LessThanFilter,
+            LessThanEqualFilter,
+            GreaterThanFilter,
+            GreaterThanEqualFilter,
+            InFilter,
+        ),
+    ),
+    (
+        fields.String,
+        (
+            EqualFilter,
+            NotEqualFilter,
+            StringContainsFilter,
+            StringIContainsFilter,
+            StartsWithFilter,
+            IStartsWithFilter,
+            EndsWithFilter,
+            IEndsWithFilter,
+            InFilter,
+        ),
+    ),
+    (fields.Array, (ContainsFilter,)),
+    (fields.ToOne, (EqualFilter, NotEqualFilter, InFilter)),
+    (fields.ToMany, (ContainsFilter,)),
 )

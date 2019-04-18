@@ -9,28 +9,18 @@ from tests import BaseTestCase
 
 FOO_REFERENCE = {
     "type": "object",
-    "properties": {
-        "$ref": {
-            "type": "string",
-            "pattern": "^\/api\/foo\/[^/]+$"
-        }
-    },
-     "additionalProperties": False
+    "properties": {"$ref": {"type": "string", "pattern": "^\/api\/foo\/[^/]+$"}},
+    "additionalProperties": False,
 }
 
 FOO_REFERENCE_NULLABLE = {
     "type": ["object", "null"],
-    "properties": {
-        "$ref": {
-            "type": "string",
-            "pattern": "^\/api\/foo\/[^/]+$"
-        }
-    },
-     "additionalProperties": False
+    "properties": {"$ref": {"type": "string", "pattern": "^\/api\/foo\/[^/]+$"}},
+    "additionalProperties": False,
 }
 
-class NaturalKeyTestCase(BaseTestCase):
 
+class NaturalKeyTestCase(BaseTestCase):
     def setUp(self):
         super(NaturalKeyTestCase, self).setUp()
         self.api = Api(self.app, prefix='/api')
@@ -38,9 +28,7 @@ class NaturalKeyTestCase(BaseTestCase):
     def test_simple_key(self):
         class Foo(ModelResource):
             class Meta:
-                key_converters = [
-                    RefKey()
-                ]
+                key_converters = [RefKey()]
                 model = 'foo'
                 manager = MemoryManager
 
@@ -56,12 +44,10 @@ class NaturalKeyTestCase(BaseTestCase):
 
     def test_multiple_keys(self):
         with self.assertRaises(RuntimeError) as cx:
+
             class Bar(ModelResource):
                 class Meta:
-                    key_converters = (
-                        RefKey(),
-                        PropertyKey('name')
-                    )
+                    key_converters = (RefKey(), PropertyKey('name'))
                     model = 'bar'
                     natural_key = 'alias'
                     manager = MemoryManager
@@ -71,8 +57,9 @@ class NaturalKeyTestCase(BaseTestCase):
                     alias = fields.String()
 
             self.api.add_resource(Bar)
-        self.assertEqual('Multiple keys of type string defined for bar', cx.exception.args[0])
-
+        self.assertEqual(
+            'Multiple keys of type string defined for bar', cx.exception.args[0]
+        )
 
     def test_property_key(self):
         class Foo(ModelResource):
@@ -89,38 +76,20 @@ class NaturalKeyTestCase(BaseTestCase):
         foo_field = fields.ToOne(Foo)
 
         self.assertJSONEqual(FOO_REFERENCE, foo_field.response)
-        self.assertJSONEqual({
-                                 "anyOf": [
-                                     FOO_REFERENCE,
-                                     {
-                                         "type": "integer"
-                                     },
-                                     {
-                                         "type": "string"
-                                     }
-                                 ]
-                             }, foo_field.request)
-
-
-        response = self.client.post('/api/foo', data={
-            "name": "Jane"
-        })
-        self.assert200(response)
-
-        response = self.client.post('/api/foo', data={
-            "name": "John"
-        })
-        self.assert200(response)
-
-        self.assertEqual(
-            {'id': 2, 'name': 'John'},
-            foo_field.convert(2)
+        self.assertJSONEqual(
+            {"anyOf": [FOO_REFERENCE, {"type": "integer"}, {"type": "string"}]},
+            foo_field.request,
         )
 
-        self.assertEqual(
-            {'id': 1, 'name': 'Jane'},
-            foo_field.convert('Jane')
-        )
+        response = self.client.post('/api/foo', data={"name": "Jane"})
+        self.assert200(response)
+
+        response = self.client.post('/api/foo', data={"name": "John"})
+        self.assert200(response)
+
+        self.assertEqual({'id': 2, 'name': 'John'}, foo_field.convert(2))
+
+        self.assertEqual({'id': 1, 'name': 'Jane'}, foo_field.convert('Jane'))
 
         with self.assertRaises(ValidationError):
             foo_field.convert(['John'])
@@ -128,16 +97,14 @@ class NaturalKeyTestCase(BaseTestCase):
         with self.assertRaises(ItemNotFound) as cx:
             foo_field.convert('Joanne')
 
-        self.assertEqual({
-            "message": "Not Found",
-            "status": 404,
-            "item": {
-                "$type": "foo",
-                "$where": {
-                    "name": "Joanne"
-                }
-            }
-        }, cx.exception.as_dict())
+        self.assertEqual(
+            {
+                "message": "Not Found",
+                "status": 404,
+                "item": {"$type": "foo", "$where": {"name": "Joanne"}},
+            },
+            cx.exception.as_dict(),
+        )
 
     def test_properties_key(self):
         class Foo(ModelResource):
@@ -156,64 +123,60 @@ class NaturalKeyTestCase(BaseTestCase):
         foo_field = fields.ToOne(Foo, nullable=True)
 
         self.assertJSONEqual(FOO_REFERENCE_NULLABLE, foo_field.response)
-        self.assertJSONEqual({
-                                 "anyOf": [
-                                     FOO_REFERENCE,
-                                     {
-                                         "type": "integer"
-                                     },
-                                     {
-                                         "type": "array",
-                                         "items": [{"type": "string"}, {"type": "string"}],
-                                         "additionalItems": False
-                                     },
-                                     {
-                                         "type": "null"
-                                     }
-                                 ]
-                             }, foo_field.request)
+        self.assertJSONEqual(
+            {
+                "anyOf": [
+                    FOO_REFERENCE,
+                    {"type": "integer"},
+                    {
+                        "type": "array",
+                        "items": [{"type": "string"}, {"type": "string"}],
+                        "additionalItems": False,
+                    },
+                    {"type": "null"},
+                ]
+            },
+            foo_field.request,
+        )
 
-        response = self.client.post('/api/foo', data={
-            "first_name": "Jane",
-            "last_name": "Doe"
-        })
+        response = self.client.post(
+            '/api/foo', data={"first_name": "Jane", "last_name": "Doe"}
+        )
         self.assert200(response)
 
-        response = self.client.post('/api/foo', data={
-            "first_name": "John",
-            "last_name": "Doe"
-        })
+        response = self.client.post(
+            '/api/foo', data={"first_name": "John", "last_name": "Doe"}
+        )
         self.assert200(response)
 
         self.assertEqual(
-            {'first_name': 'Jane', 'id': 1, 'last_name': 'Doe'},
-            foo_field.convert(1)
+            {'first_name': 'Jane', 'id': 1, 'last_name': 'Doe'}, foo_field.convert(1)
         )
 
         self.assertEqual(
             {'first_name': 'John', 'id': 2, 'last_name': 'Doe'},
-            foo_field.convert(['John', 'Doe'])
+            foo_field.convert(['John', 'Doe']),
         )
 
         self.assertEqual(
             {'first_name': 'John', 'id': 2, 'last_name': 'Doe'},
-            foo_field.convert({"$ref": "/api/foo/2"})
+            foo_field.convert({"$ref": "/api/foo/2"}),
         )
 
         with self.assertRaises(ItemNotFound) as cx:
             foo_field.convert(['John', 'Joe'])
 
-        self.assertEqual({
-            "message": "Not Found",
-            "status": 404,
-            "item": {
-                "$type": "foo",
-                "$where": {
-                    "first_name": "John",
-                    "last_name": "Joe"
-                }
-            }
-        }, cx.exception.as_dict())
+        self.assertEqual(
+            {
+                "message": "Not Found",
+                "status": 404,
+                "item": {
+                    "$type": "foo",
+                    "$where": {"first_name": "John", "last_name": "Joe"},
+                },
+            },
+            cx.exception.as_dict(),
+        )
 
         with self.assertRaises(ValidationError):
             foo_field.convert(['John', None])
