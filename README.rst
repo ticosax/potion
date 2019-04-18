@@ -3,8 +3,8 @@ Flask-Potion
 ============
 
 
-.. image:: https://img.shields.io/travis/biosustain/potion/master.svg?style=flat-square
-    :target: https://travis-ci.org/biosustain/potion
+.. image:: https://img.shields.io/travis/infarm/potion/next.svg?style=flat-square
+    :target: https://travis-ci.org/infarm/potion
 
 .. image:: https://img.shields.io/coveralls/biosustain/potion/master.svg?style=flat-square
     :target: https://coveralls.io/r/biosustain/potion
