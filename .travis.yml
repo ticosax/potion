@@ -16,3 +16,5 @@ install:
 script: coverage run --source=flask_potion setup.py test
 after_success:
     - coveralls
+notifications:
+  email: false
