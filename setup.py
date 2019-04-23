@@ -11,6 +11,7 @@ tests_require = [
     'Flask-MongoEngine>=0.7.1',
     'peewee==2.*',
     'nose>=1.1.2',
+    'werkzeug>=0.15.0',
 ]
 
 setup(
