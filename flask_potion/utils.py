@@ -1,3 +1,6 @@
+import sys
+import re
+
 from flask import _app_ctx_stack, _request_ctx_stack
 from werkzeug.exceptions import NotFound
 from werkzeug.urls import url_parse
@@ -65,3 +68,15 @@ def get_value(key, obj, default):
 class AttributeDict(dict):
     __getattr__ = dict.__getitem__
     __setattr__ = dict.__setitem__
+
+
+def compat_escape(string):
+    """
+    In order to be backward compatible with prior version of python(<3.7)
+    We need to escape ourselves the `/` char.
+
+    https://docs.python.org/3/library/re.html#re.escape
+    """
+    if sys.version_info >= (3, 7):
+        return re.escape(string).replace('/', r'\/')
+    return re.escape(string)
