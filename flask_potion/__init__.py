@@ -2,12 +2,12 @@ from collections import OrderedDict
 import inspect
 import operator
 from functools import partial
-from flask import current_app, make_response, json, Response, request
+from flask import current_app, make_response, json, request
 from six import wraps
 from werkzeug.exceptions import HTTPException
 from werkzeug.wrappers import BaseResponse
 from .exceptions import PotionException
-from .routes import RouteSet, to_camel_case
+from .routes import RouteSet
 from .utils import unpack
 from .resource import Resource, ModelResource
 
@@ -23,7 +23,7 @@ __all__ = (
     'schema',
     'signals',
     'contrib',
-    'natural_keys'
+    'natural_keys',
 )
 
 
@@ -53,9 +53,17 @@ class Api(object):
     :param str title: an optional title for the schema
     :param str description: an optional description for the schema
     :param Manager default_manager: an optional manager to use as default. If SQLAlchemy is installed, will use :class:`contrib.alchemy.SQLAlchemyManager`
-    """
+    """  # noqa: E501
 
-    def __init__(self, app=None, decorators=None, prefix=None, title=None, description=None, default_manager=None):
+    def __init__(
+        self,
+        app=None,
+        decorators=None,
+        prefix=None,
+        title=None,
+        description=None,
+        default_manager=None,
+    ):
         self.app = app
         self.blueprint = None
         self.prefix = prefix or ''
@@ -70,6 +78,7 @@ class Api(object):
         if default_manager is None:
             try:
                 from flask_potion.contrib.alchemy import SQLAlchemyManager
+
                 self.default_manager = SQLAlchemyManager
             except ImportError:
                 pass
@@ -104,22 +113,28 @@ class Api(object):
         app.config.setdefault('POTION_DEFAULT_PER_PAGE', 20)
         app.config.setdefault('POTION_DECORATE_SCHEMA_ENDPOINTS', True)
 
-        self._register_view(app,
-                            rule=''.join((self.prefix, '/schema')),
-                            view_func=self._schema_view,
-                            endpoint='schema',
-                            methods=['GET'],
-                            relation='describedBy')
+        self._register_view(
+            app,
+            rule=''.join((self.prefix, '/schema')),
+            view_func=self._schema_view,
+            endpoint='schema',
+            methods=['GET'],
+            relation='describedBy',
+        )
 
         for route, resource, view_func, endpoint, methods, relation in self.views:
             rule = route.rule_factory(resource)
             self._register_view(app, rule, view_func, endpoint, methods, relation)
 
         app.handle_exception = partial(self._exception_handler, app.handle_exception)
-        app.handle_user_exception = partial(self._exception_handler, app.handle_user_exception)
+        app.handle_user_exception = partial(
+            self._exception_handler, app.handle_user_exception
+        )
 
     def _register_view(self, app, rule, view_func, endpoint, methods, relation):
-        decorate_view_func = relation != 'describedBy' or app.config['POTION_DECORATE_SCHEMA_ENDPOINTS']
+        decorate_view_func = (
+            relation != 'describedBy' or app.config['POTION_DECORATE_SCHEMA_ENDPOINTS']
+        )
 
         if self.blueprint:
             endpoint = '{}.{}'.format(self.blueprint.name, endpoint)
@@ -130,10 +145,7 @@ class Api(object):
             for decorator in self.decorators:
                 view_func = decorator(view_func)
 
-        app.add_url_rule(rule,
-                         view_func=view_func,
-                         endpoint=endpoint,
-                         methods=methods)
+        app.add_url_rule(rule, view_func=view_func, endpoint=endpoint, methods=methods)
 
     def _exception_handler(self, original_handler, e):
         if isinstance(e, PotionException):
@@ -143,10 +155,7 @@ class Api(object):
             return original_handler(e)
 
         if isinstance(e, HTTPException):
-            return _make_response({
-                'status': e.code,
-                'message': e.description
-            }, e.code)
+            return _make_response({'status': e.code, 'message': e.description}, e.code)
 
         return original_handler(e)
 
@@ -174,7 +183,9 @@ class Api(object):
 
         # schema["definitions"] = definitions = OrderedDict([])
         schema["properties"] = properties = OrderedDict([])
-        for name, resource in sorted(self.resources.items(), key=operator.itemgetter(0)):
+        for name, resource in sorted(
+            self.resources.items(), key=operator.itemgetter(0)
+        ):
             resource_schema_rule = resource.routes['describedBy'].rule_factory(resource)
             properties[name] = {"$ref": '{}#'.format(resource_schema_rule)}
 
@@ -191,9 +202,13 @@ class Api(object):
             view_func = decorator(view_func)
 
         if self.app and not self.blueprint:
-            self._register_view(self.app, rule, view_func, endpoint, methods, route.relation)
+            self._register_view(
+                self.app, rule, view_func, endpoint, methods, route.relation
+            )
         else:
-            self.views.append((route, resource, view_func, endpoint, methods, route.relation))
+            self.views.append(
+                (route, resource, view_func, endpoint, methods, route.relation)
+            )
 
     def add_resource(self, resource):
         """
@@ -207,16 +222,24 @@ class Api(object):
             return
 
         if resource.api is not None and resource.api != self:
-            raise RuntimeError("Attempted to register a resource that is already registered with a different Api.")
+            raise RuntimeError(
+                "Attempted to register a resource that is already registered with a different Api."
+            )
 
         # check that each model resource has a manager; if not, initialize it.
         if issubclass(resource, ModelResource) and resource.manager is None:
             if self.default_manager:
-                resource.manager = self.default_manager(resource, resource.meta.get('model'))
+                resource.manager = self.default_manager(
+                    resource, resource.meta.get('model')
+                )
             else:
-                raise RuntimeError("'{}' has no manager, and no default manager has been defined. "
-                                   "If you're using Potion with SQLAlchemy, "
-                                   "ensure you have installed Flask-SQLAlchemy.".format(resource.meta.name))
+                raise RuntimeError(
+                    "'{}' has no manager, and no default manager has been defined. "
+                    "If you're using Potion with SQLAlchemy, "
+                    "ensure you have installed Flask-SQLAlchemy.".format(
+                        resource.meta.name
+                    )
+                )
 
         resource.api = self
         resource.route_prefix = ''.join((self.prefix, '/', resource.meta.name))
@@ -225,7 +248,9 @@ class Api(object):
             route_decorator = resource.meta.route_decorators.get(route.relation, None)
             self.add_route(route, resource, decorator=route_decorator)
 
-        for name, rset in inspect.getmembers(resource, lambda m: isinstance(m, RouteSet)):
+        for name, rset in inspect.getmembers(
+            resource, lambda m: isinstance(m, RouteSet)
+        ):
             if rset.attribute is None:
                 rset.attribute = name
 

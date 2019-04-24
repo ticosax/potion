@@ -1,7 +1,15 @@
 from functools import wraps
 import unittest
 from flask import current_app, request
-from flask_principal import Identity, identity_changed, identity_loaded, RoleNeed, UserNeed, Principal, ItemNeed
+from flask_principal import (
+    Identity,
+    identity_changed,
+    identity_loaded,
+    RoleNeed,
+    UserNeed,
+    Principal,
+    ItemNeed,
+)
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import backref
 from werkzeug.exceptions import Unauthorized
@@ -63,7 +71,9 @@ class PrincipalTestCase(BaseTestCase):
         class BookSigning(sa.Model):
             id = sa.Column(sa.Integer, primary_key=True)
             book_id = sa.Column(sa.Integer, sa.ForeignKey(Book.id), nullable=False)
-            store_id = sa.Column(sa.Integer, sa.ForeignKey(BookStore.id), nullable=False)
+            store_id = sa.Column(
+                sa.Integer, sa.ForeignKey(BookStore.id), nullable=False
+            )
 
             book = sa.relationship(Book)
             store = sa.relationship(BookStore)
@@ -98,7 +108,10 @@ class PrincipalTestCase(BaseTestCase):
                     raise Unauthorized()
 
                 if auth.password == 'password':
-                    identity_changed.send(current_app._get_current_object(), identity=Identity(self.mock_user['id']))
+                    identity_changed.send(
+                        current_app._get_current_object(),
+                        identity=Identity(self.mock_user['id']),
+                    )
                 else:
                     raise Unauthorized()
                 return fn(*args, **kwargs)
@@ -109,15 +122,13 @@ class PrincipalTestCase(BaseTestCase):
 
     def test_role(self):
         with self.assertRaises(RuntimeError):
-            manager = principals(MemoryManager)
+            principals(MemoryManager)
 
-    def test_role(self):
+    def test_create_author(self):
         class BookResource(PrincipalResource):
             class Meta:
                 model = self.BOOK
-                permissions = {
-                    'create': 'author'
-                }
+                permissions = {'create': 'author'}
 
         self.api.add_resource(BookResource)
 
@@ -151,10 +162,7 @@ class PrincipalTestCase(BaseTestCase):
         class BookResource(PrincipalResource):
             class Meta:
                 model = self.BOOK
-                permissions = {
-                    'read': 'author',
-                    'create': 'author',
-                }
+                permissions = {'read': 'author', 'create': 'author'}
 
         self.api.add_resource(BookResource)
         self.mock_user = {'id': 1, 'roles': ['author']}
@@ -166,14 +174,10 @@ class PrincipalTestCase(BaseTestCase):
         self.assert403(self.client.get('/book'))
 
     def test_inherit_role_to_one_field(self):
-
         class BookStoreResource(PrincipalResource):
             class Meta:
                 model = self.BOOK_STORE
-                permissions = {
-                    'create': 'admin',
-                    'update': ['admin']
-                }
+                permissions = {'create': 'admin', 'update': ['admin']}
 
         class BookSigningResource(PrincipalResource):
             class Schema:
@@ -182,64 +186,51 @@ class PrincipalTestCase(BaseTestCase):
 
             class Meta:
                 model = self.BOOK_SIGNING
-                permissions = {
-                    'create': 'update:store'
-                }
+                permissions = {'create': 'update:store'}
 
         class BookResource(PrincipalResource):
             class Meta:
                 model = self.BOOK
-                permissions = {
-                    'create': 'yes'
-                }
+                permissions = {'create': 'yes'}
 
         self.api.add_resource(BookStoreResource)
         self.api.add_resource(BookSigningResource)
         self.api.add_resource(BookResource)
 
         self.mock_user = {'id': 1, 'roles': ['admin']}
-        self.assert200(self.client.post('/book_store', data={
-            'name': 'Foo Books'
-        }))
+        self.assert200(self.client.post('/book_store', data={'name': 'Foo Books'}))
 
-        self.assert200(self.client.post('/book', data={
-            'title': 'Bar'
-        }))
+        self.assert200(self.client.post('/book', data={'title': 'Bar'}))
 
         self.mock_user = {'id': 2}
 
-        response = self.client.post('/book_signing', data={
-            'book': {'$ref': '/book/1'},
-            'store': {'$ref': '/book_store/1'}
-        })
+        response = self.client.post(
+            '/book_signing',
+            data={'book': {'$ref': '/book/1'}, 'store': {'$ref': '/book_store/1'}},
+        )
         self.assert403(response)
 
         self.mock_user = {'id': 1, 'roles': ['admin']}
-        self.assert200(self.client.post('/book_signing', data={
-            'book': {'$ref': '/book/1'},
-            'store': {'$ref': '/book_store/1'}
-        }))
+        self.assert200(
+            self.client.post(
+                '/book_signing',
+                data={'book': {'$ref': '/book/1'}, 'store': {'$ref': '/book_store/1'}},
+            )
+        )
 
     def test_user_need(self):
-
         class BookStoreResource(PrincipalResource):
             class Schema:
                 owner = fields.ToOne('user')
 
             class Meta:
                 model = self.BOOK_STORE
-                permissions = {
-                    'create': 'admin',
-                    'update': ['admin', 'user:owner']
-                }
+                permissions = {'create': 'admin', 'update': ['admin', 'user:owner']}
 
         class UserResource(PrincipalResource):
             class Meta:
                 model = self.USER
-                permissions = {
-                    'create': 'admin',
-                    'update': 'user:$uri'
-                }
+                permissions = {'create': 'admin', 'update': 'user:$uri'}
 
         self.api.add_resource(BookStoreResource)
         self.api.add_resource(UserResource)
@@ -249,30 +240,27 @@ class PrincipalTestCase(BaseTestCase):
         self.assert200(self.client.post('/user', data={'name': 'Admin'}))
         self.assert200(self.client.patch('/user/1', data={'name': 'Other'}))
 
-        for i, store in enumerate([
-            {
-                'name': 'Books & More',
-                'owner': {
-                    'name': 'Mr. Moore'
-                }
-            },
-            {
-                'name': 'Foo Books',
-                'owner': {
-                    'name': 'Foo'
-                }
-            }
-        ]):
+        for i, store in enumerate(
+            [
+                {'name': 'Books & More', 'owner': {'name': 'Mr. Moore'}},
+                {'name': 'Foo Books', 'owner': {'name': 'Foo'}},
+            ]
+        ):
             response = self.client.post('/user', data=store['owner'])
 
             owner = {'$ref': response.json['$uri']}
-            response = self.client.post('/book_store', data={
-                'name': store['name'],
-                'owner': owner
-            })
+            response = self.client.post(
+                '/book_store', data={'name': store['name'], 'owner': owner}
+            )
 
-            self.assertEqual({'$uri': '/book_store/{}'.format(i + 1), 'name': store['name'], 'owner': owner},
-                             response.json)
+            self.assertEqual(
+                {
+                    '$uri': '/book_store/{}'.format(i + 1),
+                    'name': store['name'],
+                    'owner': owner,
+                },
+                response.json,
+            )
 
         response = self.client.patch('/book_store/1', data={'name': 'books & moore'})
         self.assert200(response)
@@ -286,24 +274,23 @@ class PrincipalTestCase(BaseTestCase):
 
         self.assert200(response)
 
-        self.assertEqual({
-            '$uri': '/book_store/1',
-            'name': 'Books & Moore',
-            'owner': {'$ref': '/user/2'}
-        }, response.json)
+        self.assertEqual(
+            {
+                '$uri': '/book_store/1',
+                'name': 'Books & Moore',
+                'owner': {'$ref': '/user/2'},
+            },
+            response.json,
+        )
 
         response = self.client.patch('/book_store/2', data={'name': 'Moore Books'})
         self.assert403(response)
 
     def test_item_need_update(self):
-
         class BookStoreResource(PrincipalResource):
             class Meta:
                 model = self.BOOK_STORE
-                permissions = {
-                    'create': 'admin',
-                    'update': 'update'
-                }
+                permissions = {'create': 'admin', 'update': 'update'}
 
         self.api.add_resource(BookStoreResource)
 
@@ -332,11 +319,7 @@ class PrincipalTestCase(BaseTestCase):
         class BookResource(PrincipalResource):
             class Meta:
                 model = self.BOOK
-                permissions = {
-                    'read': 'yes',
-                    'create': 'admin',
-                    'update': 'no'
-                }
+                permissions = {'read': 'yes', 'create': 'admin', 'update': 'no'}
 
         self.api.add_resource(BookResource)
 
@@ -347,14 +330,13 @@ class PrincipalTestCase(BaseTestCase):
         self.assert200(self.client.get('/book'))
 
     def test_item_need_read(self):
-
         class BookResource(PrincipalResource):
             class Meta:
                 model = self.BOOK
                 permissions = {
                     'read': ['owns-copy', 'admin'],
                     'create': 'admin',
-                    'owns-copy': 'owns-copy'
+                    'owns-copy': 'owns-copy',
                 }
 
         self.api.add_resource(BookResource)
@@ -371,16 +353,27 @@ class PrincipalTestCase(BaseTestCase):
 
         self.assertEqual(20, len(self.client.get('/book').json))
 
-        self.mock_user = {'id': 2, 'needs': [ItemNeed('owns-copy', i, 'book') for i in (1, 4, 6, 8, 11, 15, 19)]}
+        self.mock_user = {
+            'id': 2,
+            'needs': [
+                ItemNeed('owns-copy', i, 'book') for i in (1, 4, 6, 8, 11, 15, 19)
+            ],
+        }
         self.assertEqual(7, len(self.client.get('/book').json))
 
-        self.mock_user = {'id': 3, 'needs': [ItemNeed('owns-copy', i, 'book') for i in (2, 7, 19)]}
+        self.mock_user = {
+            'id': 3,
+            'needs': [ItemNeed('owns-copy', i, 'book') for i in (2, 7, 19)],
+        }
 
-        self.assertEqual([
-            {'$uri': '/book/2', 'title': 'GoT Vol. 2'},
-            {'$uri': '/book/7', 'title': 'GoT Vol. 7'},
-            {'$uri': '/book/19', 'title': 'GoT Vol. 19'}
-        ], self.client.get('/book').json)
+        self.assertEqual(
+            [
+                {'$uri': '/book/2', 'title': 'GoT Vol. 2'},
+                {'$uri': '/book/7', 'title': 'GoT Vol. 7'},
+                {'$uri': '/book/19', 'title': 'GoT Vol. 19'},
+            ],
+            self.client.get('/book').json,
+        )
 
         self.assert404(self.client.get('/book/15'))
         self.assert200(self.client.get('/book/2'))
@@ -404,7 +397,7 @@ class PrincipalTestCase(BaseTestCase):
                     'read': ['owns-copy', 'update', 'admin'],
                     'create': 'writer',
                     'update': 'user:author',
-                    'owns-copy': 'owns-copy'
+                    'owns-copy': 'owns-copy',
                 }
 
         class UserResource(PrincipalResource):
@@ -412,33 +405,24 @@ class PrincipalTestCase(BaseTestCase):
 
             class Meta:
                 model = self.USER
-                permissions = {
-                    'create': 'admin'
-                }
+                permissions = {'create': 'admin'}
 
         self.api.add_resource(UserResource)
         self.api.add_resource(BookResource)
 
         self.mock_user = {'id': 1, 'roles': ['admin']}
 
-        for user in [
-            {'name': 'Admin'},
-            {'name': 'Author 1'},
-            {'name': 'Author 2'}
-        ]:
+        for user in [{'name': 'Admin'}, {'name': 'Author 1'}, {'name': 'Author 2'}]:
             response = self.client.post('/user', data=user)
             self.assert200(response)
 
-        response = self.client.post('/book', data={
-            'title': 'Foo'
-        })
+        response = self.client.post('/book', data={'title': 'Foo'})
         self.assert403(response)
 
         self.mock_user = {'id': 2, 'roles': ['writer']}
-        response = self.client.post('/book', data={
-            'author': {'$ref': '/user/2'},
-            'title': 'Bar'
-        })
+        response = self.client.post(
+            '/book', data={'author': {'$ref': '/user/2'}, 'title': 'Bar'}
+        )
 
         self.assert200(response)
 
@@ -452,7 +436,10 @@ class PrincipalTestCase(BaseTestCase):
 
         response = self.client.post('/book', data={'title': 'Spy: The Prequel'})
         self.assert200(response)
-        self.assertJSONEqual({'$uri': '/book/4', 'author': None, 'title': 'Spy: The Prequel'}, response.json)
+        self.assertJSONEqual(
+            {'$uri': '/book/4', 'author': None, 'title': 'Spy: The Prequel'},
+            response.json,
+        )
 
         self.mock_user = {'id': 1, 'roles': ['admin']}
         self.client.post('/user/3/books', data={'$ref': '/book/2'})
@@ -492,7 +479,7 @@ class PrincipalTestCase(BaseTestCase):
                     'read': 'create',
                     'create': 'read',
                     'update': 'create',
-                    'delete': 'update'
+                    'delete': 'update',
                 }
 
         self.api.add_resource(BookResource)

@@ -42,13 +42,19 @@ class HybridItemNeed(HybridNeed):
     def __call__(self, item):
         if self.method == 'id':
             return UserNeed(get_value(item, self.resource.manager.id_attribute, None))
-        return ItemNeed(self.method, get_value(item, self.resource.manager.id_attribute, None), self.type)
+        return ItemNeed(
+            self.method,
+            get_value(item, self.resource.manager.id_attribute, None),
+            self.type,
+        )
 
     def __eq__(self, other):
-        return isinstance(other, HybridItemNeed) and \
-               self.method == other.method and \
-               self.type == other.type and \
-               self.resource == other.resource
+        return (
+            isinstance(other, HybridItemNeed)
+            and self.method == other.method
+            and self.type == other.type
+            and self.resource == other.resource
+        )
 
     def __hash__(self):
         return hash(self.__repr__())
@@ -70,9 +76,9 @@ class HybridRelationshipNeed(HybridItemNeed):
     """
 
     def __init__(self, method, *fields):
-        super(HybridRelationshipNeed, self).__init__(method,
-                                                     fields[-1].resource,
-                                                     fields[-1].target.meta.name)
+        super(HybridRelationshipNeed, self).__init__(
+            method, fields[-1].resource, fields[-1].target.meta.name
+        )
         self.fields = fields
         self.final_field = self.fields[-1]
 
@@ -95,10 +101,12 @@ class HybridRelationshipNeed(HybridItemNeed):
         return ItemNeed(self.method, item_id, self.type)
 
     def __eq__(self, other):
-        return isinstance(other, HybridItemNeed) and \
-               self.method == other.method and \
-               self.resource == other.resource and \
-               self.fields == other.fields
+        return (
+            isinstance(other, HybridItemNeed)
+            and self.method == other.method
+            and self.resource == other.resource
+            and self.fields == other.fields
+        )
 
     def extend(self, field):
         return HybridRelationshipNeed(self.method, field, *self.fields)
@@ -107,7 +115,9 @@ class HybridRelationshipNeed(HybridItemNeed):
         return hash((self.method, self.type, self.fields))
 
     def __repr__(self):
-        return "<HybridRelationshipNeed method='{}' type='{}' {}>".format(self.method, self.type, self.fields)
+        return "<HybridRelationshipNeed method='{}' type='{}' {}>".format(
+            self.method, self.type, self.fields
+        )
 
 
 class HybridUserNeed(HybridRelationshipNeed):

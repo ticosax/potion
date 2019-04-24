@@ -10,7 +10,9 @@ class PeeweeBaseFilter(filters.BaseFilter):
 
     @classmethod
     def apply(cls, query, conditions):
-        expressions = [condition.filter.expression(condition.value) for condition in conditions]
+        expressions = [
+            condition.filter.expression(condition.value) for condition in conditions
+        ]
         if len(expressions) == 1:
             return query.where(expressions[0])
         return query.where(and_(*expressions))
@@ -106,59 +108,48 @@ FILTER_NAMES = (
 
 
 FILTERS_BY_TYPE = (
-    (fields.Uri, (
-        EqualFilter,
-        NotEqualFilter,
-        InFilter
-    )),
-    (fields.ItemUri, (
-        EqualFilter,
-        NotEqualFilter,
-        InFilter
-    )),
-    (fields.Boolean, (
-        EqualFilter,
-        NotEqualFilter,
-        InFilter
-    )),
-    (fields.Integer, (
-        EqualFilter,
-        NotEqualFilter,
-        LessThanFilter,
-        LessThanEqualFilter,
-        GreaterThanFilter,
-        GreaterThanEqualFilter,
-        InFilter,
-    )),
-    (fields.Number, (
-        EqualFilter,
-        NotEqualFilter,
-        LessThanFilter,
-        LessThanEqualFilter,
-        GreaterThanFilter,
-        GreaterThanEqualFilter,
-        InFilter,
-    )),
-    (fields.String, (
-        EqualFilter,
-        NotEqualFilter,
-        StringContainsFilter,
-        StringIContainsFilter,
-        StartsWithFilter,
-        IStartsWithFilter,
-        EndsWithFilter,
-        IEndsWithFilter,
-        InFilter,
-    )),
-    (fields.Array, (
-        ContainsFilter,
-    )),
-    (fields.ToOne, (
-        EqualFilter,
-        NotEqualFilter,
-        InFilter,
-    )),
-    (fields.ToMany, (
-        ContainsFilter,
-    )),
+    (fields.Uri, (EqualFilter, NotEqualFilter, InFilter)),
+    (fields.ItemUri, (EqualFilter, NotEqualFilter, InFilter)),
+    (fields.Boolean, (EqualFilter, NotEqualFilter, InFilter)),
+    (
+        fields.Integer,
+        (
+            EqualFilter,
+            NotEqualFilter,
+            LessThanFilter,
+            LessThanEqualFilter,
+            GreaterThanFilter,
+            GreaterThanEqualFilter,
+            InFilter,
+        ),
+    ),
+    (
+        fields.Number,
+        (
+            EqualFilter,
+            NotEqualFilter,
+            LessThanFilter,
+            LessThanEqualFilter,
+            GreaterThanFilter,
+            GreaterThanEqualFilter,
+            InFilter,
+        ),
+    ),
+    (
+        fields.String,
+        (
+            EqualFilter,
+            NotEqualFilter,
+            StringContainsFilter,
+            StringIContainsFilter,
+            StartsWithFilter,
+            IStartsWithFilter,
+            EndsWithFilter,
+            IEndsWithFilter,
+            InFilter,
+        ),
+    ),
+    (fields.Array, (ContainsFilter,)),
+    (fields.ToOne, (EqualFilter, NotEqualFilter, InFilter)),
+    (fields.ToMany, (ContainsFilter,)),
 )

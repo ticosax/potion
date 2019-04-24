@@ -1,6 +1,5 @@
 from flask import g
 from flask_principal import Permission
-from sqlalchemy import or_
 
 from .needs import HybridNeed
 
@@ -9,6 +8,7 @@ class HybridPermission(Permission):
     """
     Hybrid :class:`flask_principal.Permission` that evaluates both regular and hybrid needs.
     """
+
     def __init__(self, *needs):
         super(HybridPermission, self).__init__(*needs)
         self.hybrid_needs = set()
@@ -26,7 +26,9 @@ class HybridPermission(Permission):
 
         :param flask_principal.Identity identity: An identity with a set of provided *needs*
         """
-        if self.standard_needs and not self.standard_needs.intersection(identity.provides):
+        if self.standard_needs and not self.standard_needs.intersection(
+            identity.provides
+        ):
             return False
 
         # TODO support standard needs for excludes

@@ -42,7 +42,6 @@ class PeeweeSignalTestCase(BaseTestCase):
         db.database.connect()
         db.database.create_tables([User, Group, GroupMembership])
 
-
         class UserResource(ModelResource):
             class Meta:
                 model = User
@@ -70,18 +69,19 @@ class PeeweeSignalTestCase(BaseTestCase):
             events.append((signal, sender, kwargs))
 
         receivers = {
-            signal: partial(receiver_, signal) for signal in [
-            signals.before_create,
-            signals.after_create,
-            signals.before_update,
-            signals.after_update,
-            signals.before_delete,
-            signals.after_delete,
-            signals.before_add_to_relation,
-            signals.after_add_to_relation,
-            signals.before_remove_from_relation,
-            signals.after_remove_from_relation
-        ]
+            signal: partial(receiver_, signal)
+            for signal in [
+                signals.before_create,
+                signals.after_create,
+                signals.before_update,
+                signals.after_update,
+                signals.before_delete,
+                signals.after_delete,
+                signals.before_add_to_relation,
+                signals.after_add_to_relation,
+                signals.before_remove_from_relation,
+                signals.after_remove_from_relation,
+            ]
         }
 
         for signal, receiver in receivers.items():
@@ -89,7 +89,7 @@ class PeeweeSignalTestCase(BaseTestCase):
 
         try:
             yield None
-        except:
+        except Exception:
             for signal, receiver in receivers.items():
                 signal.disconnect(receiver)
             raise
@@ -99,40 +99,76 @@ class PeeweeSignalTestCase(BaseTestCase):
 
             self.assertEqual(events, expected_events)
 
-
     def test_create_signal(self):
 
-        with self.assertSignals([
-            (signals.before_create, self.UserResource, {'item': self.User(name="Foo")}),
-            (signals.after_create, self.UserResource, {'item': self.User(name="Foo")})
-        ]):
+        with self.assertSignals(
+            [
+                (
+                    signals.before_create,
+                    self.UserResource,
+                    {'item': self.User(name="Foo")},
+                ),
+                (
+                    signals.after_create,
+                    self.UserResource,
+                    {'item': self.User(name="Foo")},
+                ),
+            ]
+        ):
             response = self.client.post('/user', data={"name": "Foo"})
             self.assert200(response)
-            self.assertJSONEqual({'$uri': '/user/1', "name": "Foo", "gender": None}, response.json)
-
+            self.assertJSONEqual(
+                {'$uri': '/user/1', "name": "Foo", "gender": None}, response.json
+            )
 
     def test_update_signal(self):
         response = self.client.post('/user', data={"name": "Foo"})
         self.assert200(response)
 
-        with self.assertSignals([
-            (signals.before_update, self.UserResource, {'changes': {'gender': 'M', 'name': 'Bar'},
-                                                        'item': self.User(name="Bar")}),
-            (signals.after_update, self.UserResource, {'changes': {'gender': 'M', 'name': 'Bar'},
-                                                       'item': self.User(name="Bar")})
-        ]):
+        with self.assertSignals(
+            [
+                (
+                    signals.before_update,
+                    self.UserResource,
+                    {
+                        'changes': {'gender': 'M', 'name': 'Bar'},
+                        'item': self.User(name="Bar"),
+                    },
+                ),
+                (
+                    signals.after_update,
+                    self.UserResource,
+                    {
+                        'changes': {'gender': 'M', 'name': 'Bar'},
+                        'item': self.User(name="Bar"),
+                    },
+                ),
+            ]
+        ):
             response = self.client.patch('/user/1', data={"name": "Bar", "gender": "M"})
             self.assert200(response)
-            self.assertJSONEqual({'$uri': '/user/1', "name": "Bar", "gender": "M"}, response.json)
+            self.assertJSONEqual(
+                {'$uri': '/user/1', "name": "Bar", "gender": "M"}, response.json
+            )
 
     def test_delete_signal(self):
         response = self.client.post('/user', data={"name": "Foo"})
         self.assert200(response)
 
-        with self.assertSignals([
-            (signals.before_delete, self.UserResource, {'item': self.User(name="Foo")}),
-            (signals.after_delete, self.UserResource, {'item': self.User(name="Foo")})
-        ]):
+        with self.assertSignals(
+            [
+                (
+                    signals.before_delete,
+                    self.UserResource,
+                    {'item': self.User(name="Foo")},
+                ),
+                (
+                    signals.after_delete,
+                    self.UserResource,
+                    {'item': self.User(name="Foo")},
+                ),
+            ]
+        ):
             response = self.client.delete('/user/1')
             self.assertStatus(response, 204)
 
@@ -141,22 +177,56 @@ class PeeweeSignalTestCase(BaseTestCase):
         response = self.client.post('/user', data={"name": "Foo"})
         self.assert200(response)
 
-        with self.assertSignals([
-            (signals.before_create, self.UserResource, {'item': self.User(name="Bar")}),
-            (signals.after_create, self.UserResource, {'item': self.User(name="Bar")}),
-            (signals.before_add_to_relation, self.UserResource, {'item': self.User(name="Foo"),
-                                                                 'attribute': 'children',
-                                                                 'child': self.User(name="Bar")}),
-            (signals.after_add_to_relation, self.UserResource, {'item': self.User(name="Foo"),
-                                                                'attribute': 'children',
-                                                                'child': self.User(name="Bar")}),
-            (signals.before_remove_from_relation, self.UserResource, {'item': self.User(name="Foo"),
-                                                                      'attribute': 'children',
-                                                                      'child': self.User(name="Bar")}),
-            (signals.after_remove_from_relation, self.UserResource, {'item': self.User(name="Foo"),
-                                                                     'attribute': 'children',
-                                                                     'child': self.User(name="Bar")})
-        ]):
+        with self.assertSignals(
+            [
+                (
+                    signals.before_create,
+                    self.UserResource,
+                    {'item': self.User(name="Bar")},
+                ),
+                (
+                    signals.after_create,
+                    self.UserResource,
+                    {'item': self.User(name="Bar")},
+                ),
+                (
+                    signals.before_add_to_relation,
+                    self.UserResource,
+                    {
+                        'item': self.User(name="Foo"),
+                        'attribute': 'children',
+                        'child': self.User(name="Bar"),
+                    },
+                ),
+                (
+                    signals.after_add_to_relation,
+                    self.UserResource,
+                    {
+                        'item': self.User(name="Foo"),
+                        'attribute': 'children',
+                        'child': self.User(name="Bar"),
+                    },
+                ),
+                (
+                    signals.before_remove_from_relation,
+                    self.UserResource,
+                    {
+                        'item': self.User(name="Foo"),
+                        'attribute': 'children',
+                        'child': self.User(name="Bar"),
+                    },
+                ),
+                (
+                    signals.after_remove_from_relation,
+                    self.UserResource,
+                    {
+                        'item': self.User(name="Foo"),
+                        'attribute': 'children',
+                        'child': self.User(name="Bar"),
+                    },
+                ),
+            ]
+        ):
             response = self.client.post('/user', data={"name": "Bar"})
             self.assert200(response)
 

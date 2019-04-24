@@ -1,12 +1,11 @@
 from collections import OrderedDict
 import inspect
 from operator import attrgetter
-import itertools
 
 import six
 
-from .natural_keys import RefKey, IDKey, PropertyKey, PropertiesKey
-from .fields import ItemType, ItemUri, Integer, Inline
+from .natural_keys import RefKey, IDKey
+from .fields import Integer, Inline
 from .reference import ResourceBound
 from .instances import Instances
 from .utils import AttributeDict
@@ -15,7 +14,6 @@ from .schema import FieldSet
 
 
 class ResourceMeta(type):
-
     def __new__(mcs, name, bases, members):
         class_ = super(ResourceMeta, mcs).__new__(mcs, name, bases, members)
         class_.routes = routes = dict(getattr(class_, 'routes') or {})
@@ -39,7 +37,6 @@ class ResourceMeta(type):
             if hasattr(base, 'Meta'):
                 meta.update(base.Meta.__dict__)
 
-
         if 'Meta' in members:
             changes = members['Meta'].__dict__
             for k, v in changes.items():
@@ -61,8 +58,10 @@ class ResourceMeta(type):
 
         if schema:
             # TODO support FieldSet with definitions
-            class_.schema = fs = FieldSet({k: f for k, f in schema.items() if not k.startswith('__')},
-                                          required_fields=meta.get('required_fields', None))
+            class_.schema = fs = FieldSet(
+                {k: f for k, f in schema.items() if not k.startswith('__')},
+                required_fields=meta.get('required_fields', None),
+            )
 
             for name in meta.get('read_only_fields', ()):
                 if name in fs.fields:
@@ -160,7 +159,8 @@ class Resource(six.with_metaclass(ResourceMeta, object)):
 
         A :class:`Route` at ``/schema`` that contains the JSON Hyper-Schema for this resource.
 
-    """
+    """  # noqa: E501
+
     api = None
     meta = None
     routes = None
@@ -168,10 +168,10 @@ class Resource(six.with_metaclass(ResourceMeta, object)):
     route_prefix = None
 
     @Route.GET('/schema', rel="describedBy", attribute="schema")
-    def described_by(self): # No "targetSchema" because that would be way too meta.
-        schema = OrderedDict([
-            ("$schema", "http://json-schema.org/draft-04/hyper-schema#"),
-        ])
+    def described_by(self):  # No "targetSchema" because that would be way too meta.
+        schema = OrderedDict(
+            [("$schema", "http://json-schema.org/draft-04/hyper-schema#")]
+        )
 
         # copy title, description from ModelResource.meta
         for property in ('title', 'description'):
@@ -186,7 +186,10 @@ class Resource(six.with_metaclass(ResourceMeta, object)):
             schema.update(self.schema.response)
 
         # TODO more intuitive sorting [self, instances,.. GET_bar, POST_bar, GET_foo, POST_foo, ..describedBy]
-        schema['links'] = [link.schema_factory(self) for link in sorted(links, key=attrgetter('relation'))]
+        schema['links'] = [
+            link.schema_factory(self)
+            for link in sorted(links, key=attrgetter('relation'))
+        ]
 
         return schema, 200, {'Content-Type': 'application/schema+json'}
 
@@ -274,7 +277,8 @@ class ModelResource(six.with_metaclass(ModelResourceMeta, Resource)):
         :param id: item id
         :return: ``(None, 204)``
 
-    """
+    """  # noqa:E501
+
     manager = None
 
     @Route.GET('', rel="instances")
@@ -282,16 +286,24 @@ class ModelResource(six.with_metaclass(ModelResourceMeta, Resource)):
         return self.manager.paginated_instances(**kwargs)
 
     # TODO custom schema (Instances/Instances) that contains the necessary schema.
-    instances.request_schema = instances.response_schema = Instances()  # TODO NOTE Instances('self') for filter, etc. schema
+    instances.request_schema = (
+        instances.response_schema
+    ) = Instances()  # TODO NOTE Instances('self') for filter, etc. schema
 
     @instances.POST(rel="create")
-    def create(self, properties):  # XXX need some way for field bindings to be dynamic/work dynamically.
+    def create(
+        self, properties
+    ):  # XXX need some way for field bindings to be dynamic/work dynamically.
         item = self.manager.create(properties)
         return item  # TODO consider 201 Created
 
     create.request_schema = create.response_schema = Inline('self')
 
-    @Route.GET(lambda r: '/<{}:id>'.format(r.meta.id_converter), rel="self", attribute="instance")
+    @Route.GET(
+        lambda r: '/<{}:id>'.format(r.meta.id_converter),
+        rel="self",
+        attribute="instance",
+    )
     def read(self, id):
         return self.manager.read(id)
 
@@ -316,7 +328,7 @@ class ModelResource(six.with_metaclass(ModelResourceMeta, Resource)):
         pass
 
     class Meta:
-        id_attribute = None    # use 'id' by default.
+        id_attribute = None  # use 'id' by default.
         sort_attribute = None  # None means use id_attribute
         id_converter = None
         id_field_class = Integer  # Must inherit from Integer, String or ItemUri
@@ -330,13 +342,10 @@ class ModelResource(six.with_metaclass(ModelResourceMeta, Resource)):
             "read": "anyone",  # anybody, yes
             "create": "nobody",  # noone, no
             "update": "create",
-            "delete": "update"
+            "delete": "update",
         }
         postgres_text_search_fields = ()
         postgres_full_text_index = None  # $fulltext
         cache = False
-        key_converters = (
-            RefKey(),
-            IDKey()
-        )
+        key_converters = (RefKey(), IDKey())
         natural_key = None

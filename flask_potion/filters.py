@@ -2,8 +2,19 @@ from werkzeug.utils import cached_property
 
 from .schema import Schema
 from .utils import get_value
-from .fields import Integer, Boolean, Number, String, Array, ToOne, ToMany, Date, DateTime, DateString, DateTimeString, \
-    Custom
+from .fields import (
+    Integer,
+    Boolean,
+    Number,
+    String,
+    Array,
+    ToOne,
+    ToMany,
+    Date,
+    DateTime,
+    DateString,
+    DateTimeString,
+)
 
 
 class BaseFilter(Schema):
@@ -53,7 +64,7 @@ class BaseFilter(Schema):
         :param b: value filtered by
         :return: ``True`` on match, ``False`` otherwise
         """
-        raise NotImplemented()
+        raise NotImplementedError
 
     @property
     def filter_field(self):
@@ -69,7 +80,9 @@ class BaseFilter(Schema):
         if self.name is None:
             return Condition(self.attribute, self, self._convert(instance))
         else:
-            return Condition(self.attribute, self, self._convert(instance["${}".format(self.name)]))
+            return Condition(
+                self.attribute, self, self._convert(instance["${}".format(self.name)])
+            )
 
     def schema(self):
         """
@@ -85,11 +98,9 @@ class BaseFilter(Schema):
             return schema
         return {
             "type": "object",
-            "properties": {
-                "${}".format(self.name): schema
-            },
+            "properties": {"${}".format(self.name): schema},
             "required": ["${}".format(self.name)],
-            "additionalProperties": False
+            "additionalProperties": False,
         }
 
 
@@ -104,7 +115,6 @@ class NotEqualFilter(BaseFilter):
 
 
 class NumberBaseFilter(BaseFilter):
-
     @cached_property
     def filter_field(self):
         if isinstance(self.field, (Date, DateTime, DateString, DateTimeString)):
@@ -137,9 +147,7 @@ class InFilter(BaseFilter):
 
     @cached_property
     def filter_field(self):
-        return Array(self.field,
-                     min_items=self.min_items,
-                     unique=True)
+        return Array(self.field, min_items=self.min_items, unique=True)
 
     def op(self, a, b):
         return a in b
@@ -197,9 +205,7 @@ class IEndsWithFilter(StringBaseFilter):
 class DateBetweenFilter(BaseFilter):
     @cached_property
     def filter_field(self):
-        return Array(self.field,
-                     min_items=2,
-                     max_items=2)
+        return Array(self.field, min_items=2, max_items=2)
 
     def op(self, a, b):
         before, after = b
@@ -228,89 +234,98 @@ FILTER_NAMES = (
 )
 
 FILTERS_BY_TYPE = (
-    (Boolean, (
-        EqualFilter,
-        NotEqualFilter,
-        InFilter
-    )),
-    (Integer, (
-        EqualFilter,
-        NotEqualFilter,
-        LessThanFilter,
-        LessThanEqualFilter,
-        GreaterThanFilter,
-        GreaterThanEqualFilter,
-        InFilter,
-    )),
-    (Number, (
-        EqualFilter,
-        NotEqualFilter,
-        LessThanFilter,
-        LessThanEqualFilter,
-        GreaterThanFilter,
-        GreaterThanEqualFilter,
-        InFilter,
-    )),
-    (String, (
-        EqualFilter,
-        NotEqualFilter,
-        StringContainsFilter,
-        StringIContainsFilter,
-        StartsWithFilter,
-        IStartsWithFilter,
-        EndsWithFilter,
-        IEndsWithFilter,
-        InFilter,
-    )),
-    (Date, (
-        EqualFilter,
-        NotEqualFilter,
-        LessThanFilter,
-        LessThanEqualFilter,
-        GreaterThanFilter,
-        GreaterThanEqualFilter,
-        DateBetweenFilter,
-        InFilter,
-    )),
-    (DateTime, (
-        EqualFilter,
-        NotEqualFilter,
-        LessThanFilter,
-        LessThanEqualFilter,
-        GreaterThanFilter,
-        GreaterThanEqualFilter,
-        DateBetweenFilter,
-    )),
-    (DateString, (
-        EqualFilter,
-        NotEqualFilter,
-        LessThanFilter,
-        LessThanEqualFilter,
-        GreaterThanFilter,
-        GreaterThanEqualFilter,
-        DateBetweenFilter,
-        InFilter,
-    )),
-    (DateTimeString, (
-        EqualFilter,
-        NotEqualFilter,
-        LessThanFilter,
-        LessThanEqualFilter,
-        GreaterThanFilter,
-        GreaterThanEqualFilter,
-        DateBetweenFilter
-    )),
-    (Array, (
-        ContainsFilter,
-    )),
-    (ToOne, (
-        EqualFilter,
-        NotEqualFilter,
-        InFilter,
-    )),
-    (ToMany, (
-        ContainsFilter,
-    )),
+    (Boolean, (EqualFilter, NotEqualFilter, InFilter)),
+    (
+        Integer,
+        (
+            EqualFilter,
+            NotEqualFilter,
+            LessThanFilter,
+            LessThanEqualFilter,
+            GreaterThanFilter,
+            GreaterThanEqualFilter,
+            InFilter,
+        ),
+    ),
+    (
+        Number,
+        (
+            EqualFilter,
+            NotEqualFilter,
+            LessThanFilter,
+            LessThanEqualFilter,
+            GreaterThanFilter,
+            GreaterThanEqualFilter,
+            InFilter,
+        ),
+    ),
+    (
+        String,
+        (
+            EqualFilter,
+            NotEqualFilter,
+            StringContainsFilter,
+            StringIContainsFilter,
+            StartsWithFilter,
+            IStartsWithFilter,
+            EndsWithFilter,
+            IEndsWithFilter,
+            InFilter,
+        ),
+    ),
+    (
+        Date,
+        (
+            EqualFilter,
+            NotEqualFilter,
+            LessThanFilter,
+            LessThanEqualFilter,
+            GreaterThanFilter,
+            GreaterThanEqualFilter,
+            DateBetweenFilter,
+            InFilter,
+        ),
+    ),
+    (
+        DateTime,
+        (
+            EqualFilter,
+            NotEqualFilter,
+            LessThanFilter,
+            LessThanEqualFilter,
+            GreaterThanFilter,
+            GreaterThanEqualFilter,
+            DateBetweenFilter,
+        ),
+    ),
+    (
+        DateString,
+        (
+            EqualFilter,
+            NotEqualFilter,
+            LessThanFilter,
+            LessThanEqualFilter,
+            GreaterThanFilter,
+            GreaterThanEqualFilter,
+            DateBetweenFilter,
+            InFilter,
+        ),
+    ),
+    (
+        DateTimeString,
+        (
+            EqualFilter,
+            NotEqualFilter,
+            LessThanFilter,
+            LessThanEqualFilter,
+            GreaterThanFilter,
+            GreaterThanEqualFilter,
+            DateBetweenFilter,
+        ),
+    ),
+    (Array, (ContainsFilter,)),
+    (ToOne, (EqualFilter, NotEqualFilter, InFilter)),
+    (ToMany, (ContainsFilter,)),
 )
 
 
@@ -330,8 +345,7 @@ def _get_names_for_filter(filter, filter_names=FILTER_NAMES):
             yield name
 
 
-def filters_for_field_class(field_class,
-                            filters_by_type=FILTERS_BY_TYPE):
+def filters_for_field_class(field_class, filters_by_type=FILTERS_BY_TYPE):
     """
     Looks up available filters from the most appropriate base class.
 
@@ -346,10 +360,13 @@ def filters_for_field_class(field_class,
             field_class_filters += filters_by_type[cls]
     return field_class_filters
 
-def filters_for_fields(fields,
-                       filters_expression,
-                       filter_names=FILTER_NAMES,
-                       filters_by_type=FILTERS_BY_TYPE):
+
+def filters_for_fields(
+    fields,
+    filters_expression,
+    filter_names=FILTER_NAMES,
+    filters_by_type=FILTERS_BY_TYPE,
+):
     """
     The filters-expression can be a :class:`bool` or a :class:`dict` keyed by field names. The values of the
     :class:`dict` can be either a :class:`bool` or a list of filter names. The `'*'` attribute is a wildcard
@@ -455,9 +472,5 @@ def simplify_schema_for_filter(schema):
     :return:
     """
     if schema:
-        return {
-            key: value
-            for key, value in schema.items()
-            if key not in ('readOnly',)
-            }
+        return {key: value for key, value in schema.items() if key not in ('readOnly',)}
     return schema

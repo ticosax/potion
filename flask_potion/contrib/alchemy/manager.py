@@ -9,12 +9,22 @@ from sqlalchemy.orm.collections import InstrumentedList
 from sqlalchemy.orm.exc import NoResultFound
 
 from flask_potion import fields
-from flask_potion.contrib.alchemy.filters import FILTER_NAMES, FILTERS_BY_TYPE, SQLAlchemyBaseFilter
+from flask_potion.contrib.alchemy.filters import FILTER_NAMES, FILTERS_BY_TYPE
 from flask_potion.exceptions import ItemNotFound, DuplicateKey, BackendConflict
 from flask_potion.instances import Pagination
 from flask_potion.manager import RelationalManager
-from flask_potion.signals import before_add_to_relation, after_add_to_relation, before_remove_from_relation, \
-    after_remove_from_relation, before_create, after_create, before_update, after_update, before_delete, after_delete
+from flask_potion.signals import (
+    before_add_to_relation,
+    after_add_to_relation,
+    before_remove_from_relation,
+    after_remove_from_relation,
+    before_create,
+    after_create,
+    before_update,
+    after_update,
+    before_delete,
+    after_delete,
+)
 from flask_potion.utils import get_value
 
 
@@ -25,6 +35,7 @@ class SQLAlchemyManager(RelationalManager):
     Expects that ``Meta.model`` contains a SQLALchemy declarative model.
 
     """
+
     FILTER_NAMES = FILTER_NAMES
     FILTERS_BY_TYPE = FILTERS_BY_TYPE
     PAGINATION_TYPES = (Pagination, SAPagination)
@@ -41,9 +52,12 @@ class SQLAlchemyManager(RelationalManager):
             self.id_column = mapper.primary_key[0]
             self.id_attribute = mapper.primary_key[0].name
 
-        self.id_field = self._get_field_from_column_type(self.id_column, self.id_attribute, io="r")
+        self.id_field = self._get_field_from_column_type(
+            self.id_column, self.id_attribute, io="r"
+        )
         self.default_sort_expression = self._get_sort_expression(
-            model, meta, self.id_column)
+            model, meta, self.id_column
+        )
 
         fs = resource.schema
         if meta.include_id:
@@ -66,9 +80,11 @@ class SQLAlchemyManager(RelationalManager):
         pre_declared_fields = {f.attribute or k for k, f in fs.fields.items()}
 
         for name, column in mapper.columns.items():
-            if (include_fields and name in include_fields) or \
-                    (exclude_fields and name not in exclude_fields) or \
-                    not (include_fields or exclude_fields):
+            if (
+                (include_fields and name in include_fields)
+                or (exclude_fields and name not in exclude_fields)
+                or not (include_fields or exclude_fields)
+            ):
                 if column.primary_key or column.foreign_keys:
                     continue
                 if name in pre_declared_fields:
@@ -107,15 +123,21 @@ class SQLAlchemyManager(RelationalManager):
         elif isinstance(column.type, postgresql.HSTORE):
             field_class = fields.Object
             args = (fields.String,)
-        elif hasattr(postgresql, 'JSON') and isinstance(column.type, (postgresql.JSON, postgresql.JSONB)):
+        elif hasattr(postgresql, 'JSON') and isinstance(
+            column.type, (postgresql.JSON, postgresql.JSONB)
+        ):
             field_class = fields.Raw
             kwargs = {"schema": {}}
         else:
             try:
                 python_type = column.type.python_type
             except NotImplementedError:
-                raise RuntimeError('Unable to auto-detect the correct field type for {}! '
-                                   'You need to specify it manually in ModelResource.Schema'.format(column))
+                raise RuntimeError(
+                    'Unable to auto-detect the correct field type for {}! '
+                    'You need to specify it manually in ModelResource.Schema'.format(
+                        column
+                    )
+                )
             field_class = self._get_field_from_python_type(python_type)
 
         kwargs['nullable'] = column.nullable
@@ -129,10 +151,12 @@ class SQLAlchemyManager(RelationalManager):
         return field_class(*args, io=io, attribute=attribute, **kwargs)
 
     def _init_filter(self, filter_class, name, field, attribute):
-        return filter_class(name,
-                            field=field,
-                            attribute=field.attribute or attribute,
-                            column=getattr(self.model, field.attribute or attribute))
+        return filter_class(
+            name,
+            field=field,
+            attribute=field.attribute or attribute,
+            column=getattr(self.model, field.attribute or attribute),
+        )
 
     def _is_sortable_field(self, field):
         if super(SQLAlchemyManager, self)._is_sortable_field(field):
@@ -210,8 +234,8 @@ class SQLAlchemyManager(RelationalManager):
                 if field.target.meta.sort_attribute:
                     sort_attribute, _ = field.target.meta.sort_attribute
                 column = getattr(
-                    target_alias,
-                    sort_attribute or field.target.manager.id_attribute)
+                    target_alias, sort_attribute or field.target.manager.id_attribute
+                )
 
             order_clauses.append(column.desc() if reverse else column.asc())
 
@@ -254,7 +278,11 @@ class SQLAlchemyManager(RelationalManager):
                     raise DuplicateKey(detail=e.orig.diag.message_detail)
 
             if current_app.debug:
-                raise BackendConflict(debug_info=dict(exception_message=str(e), statement=e.statement, params=e.params))
+                raise BackendConflict(
+                    debug_info=dict(
+                        exception_message=str(e), statement=e.statement, params=e.params
+                    )
+                )
             raise BackendConflict()
 
         after_create.send(self.resource, item=item)
@@ -264,7 +292,8 @@ class SQLAlchemyManager(RelationalManager):
         session = self._get_session()
 
         actual_changes = {
-            key: value for key, value in changes.items()
+            key: value
+            for key, value in changes.items()
             if self._is_change(get_value(key, item, None), value)
         }
 
@@ -284,7 +313,11 @@ class SQLAlchemyManager(RelationalManager):
                     raise DuplicateKey(detail=e.orig.diag.message_detail)
 
             if current_app.debug:
-                raise BackendConflict(debug_info=dict(exception_message=str(e), statement=e.statement, params=e.params))
+                raise BackendConflict(
+                    debug_info=dict(
+                        exception_message=str(e), statement=e.statement, params=e.params
+                    )
+                )
             raise BackendConflict()
 
         after_update.send(self.resource, item=item, changes=actual_changes)
@@ -302,12 +335,18 @@ class SQLAlchemyManager(RelationalManager):
             session.rollback()
 
             if current_app.debug:
-                raise BackendConflict(debug_info=dict(exception_message=str(e), statement=e.statement, params=e.params))
+                raise BackendConflict(
+                    debug_info=dict(
+                        exception_message=str(e), statement=e.statement, params=e.params
+                    )
+                )
             raise BackendConflict()
 
         after_delete.send(self.resource, item=item)
 
-    def relation_instances(self, item, attribute, target_resource, page=None, per_page=None):
+    def relation_instances(
+        self, item, attribute, target_resource, page=None, per_page=None
+    ):
         query = getattr(item, attribute)
 
         if isinstance(query, InstrumentedList):
@@ -321,12 +360,18 @@ class SQLAlchemyManager(RelationalManager):
         return self._query_get_all(query)
 
     def relation_add(self, item, attribute, target_resource, target_item):
-        before_add_to_relation.send(self.resource, item=item, attribute=attribute, child=target_item)
+        before_add_to_relation.send(
+            self.resource, item=item, attribute=attribute, child=target_item
+        )
         getattr(item, attribute).append(target_item)
-        after_add_to_relation.send(self.resource, item=item, attribute=attribute, child=target_item)
+        after_add_to_relation.send(
+            self.resource, item=item, attribute=attribute, child=target_item
+        )
 
     def relation_remove(self, item, attribute, target_resource, target_item):
-        before_remove_from_relation.send(self.resource, item=item, attribute=attribute, child=target_item)
+        before_remove_from_relation.send(
+            self.resource, item=item, attribute=attribute, child=target_item
+        )
         try:
             collection = getattr(item, attribute)
         except ValueError:
@@ -335,10 +380,7 @@ class SQLAlchemyManager(RelationalManager):
             if target_item in collection:
                 collection.remove(target_item)
                 after_remove_from_relation.send(
-                    self.resource,
-                    item=item,
-                    attribute=attribute,
-                    child=target_item,
+                    self.resource, item=item, attribute=attribute, child=target_item
                 )
 
     def commit(self):

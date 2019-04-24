@@ -1,8 +1,12 @@
 from flask_potion.exceptions import ItemNotFound
 from flask_potion.instances import Pagination
 from flask_potion.manager import Manager
-from flask_potion.signals import before_add_to_relation, after_add_to_relation, before_remove_from_relation, \
-    after_remove_from_relation
+from flask_potion.signals import (
+    before_add_to_relation,
+    after_add_to_relation,
+    before_remove_from_relation,
+    after_remove_from_relation,
+)
 from flask_potion.utils import get_value
 
 
@@ -34,13 +38,17 @@ class MemoryManager(Manager):
     @staticmethod
     def _sort_items(items, sort):
         for field, key, reverse in reversed(sort):
-            items = sorted(items, key=lambda item: get_value(key, item, None), reverse=reverse)
+            items = sorted(
+                items, key=lambda item: get_value(key, item, None), reverse=reverse
+            )
         return items
 
     def _paginate(self, items, page, per_page):
         return Pagination.from_list(list(items), page, per_page)
 
-    def relation_instances(self, item, attribute, target_resource, page=None, per_page=None):
+    def relation_instances(
+        self, item, attribute, target_resource, page=None, per_page=None
+    ):
         collection = item.get(attribute, set())
 
         items = []
@@ -54,19 +62,26 @@ class MemoryManager(Manager):
         return Pagination.from_list(items, page, per_page)
 
     def relation_add(self, item, attribute, target_resource, target_item):
-        before_add_to_relation.send(self.resource, item=item, attribute=attribute, child=target_item)
+        before_add_to_relation.send(
+            self.resource, item=item, attribute=attribute, child=target_item
+        )
         item[attribute] = collection = item.get(attribute, set())
         item_id = target_item[target_resource.manager.id_attribute]
         collection.add(item_id)
-        after_add_to_relation.send(self.resource, item=item, attribute=attribute, child=target_item)
-
+        after_add_to_relation.send(
+            self.resource, item=item, attribute=attribute, child=target_item
+        )
 
     def relation_remove(self, item, attribute, target_resource, target_item):
-        before_remove_from_relation.send(self.resource, item=item, attribute=attribute, child=target_item)
+        before_remove_from_relation.send(
+            self.resource, item=item, attribute=attribute, child=target_item
+        )
         item[attribute] = collection = item.get(attribute, set())
         item_id = target_item[target_resource.manager.id_attribute]
         collection.remove(item_id)
-        after_remove_from_relation.send(self.resource, item=item, attribute=attribute, child=target_item)
+        after_remove_from_relation.send(
+            self.resource, item=item, attribute=attribute, child=target_item
+        )
 
     def paginated_instances(self, page, per_page, where=None, sort=None):
         return self._paginate(self.instances(where=where, sort=sort), page, per_page)

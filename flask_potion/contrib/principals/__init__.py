@@ -14,7 +14,7 @@ PERMISSION_DEFAULTS = (
     ('read', 'yes'),
     ('create', 'no'),
     ('update', 'create'),
-    ('delete', 'update')
+    ('delete', 'update'),
 )
 
 DEFAULT_METHODS = ('read', 'create', 'update', 'delete')
@@ -23,11 +23,12 @@ METHOD_ROUTE_RELATIONS = (
     ('read', ('read', 'instances')),
     ('create', ('create',)),
     ('update', ('update',)),
-    ('delete', ('destroy',))
+    ('delete', ('destroy',)),
 )
 
 PERMISSION_DENIED_STRINGS = ('no', 'nobody', 'noone')
 PERMISSION_GRANTED_STRINGS = ('yes', 'everybody', 'anybody', 'everyone', 'anyone')
+
 
 class PrincipalMixin(object):
     def __init__(self, *args, **kwargs):
@@ -58,7 +59,11 @@ class PrincipalMixin(object):
                     if need == method:
                         options.add(HybridItemNeed(method, self.resource))
                     elif need in path:
-                        raise RuntimeError('Circular permissions in {} (path: {})'.format(self.resource, path))
+                        raise RuntimeError(
+                            'Circular permissions in {} (path: {})'.format(
+                                self.resource, path
+                            )
+                        )
                     else:
                         path += (method,)
                         options |= convert(need, map[need], map, path)
@@ -116,7 +121,10 @@ class PrincipalMixin(object):
         :param item:
         :return: Dictionary in the form ``{operation: bool, ..}``
         """
-        return {operation: permission.can(item) for operation, permission in self._permissions.items()}
+        return {
+            operation: permission.can(item)
+            for operation, permission in self._permissions.items()
+        }
 
     def can_create_item(self, item):
         """
@@ -169,7 +177,9 @@ class PrincipalMixin(object):
                 expression = need.fields[-1].target.manager._expression_for_ids(ids)
 
                 for field in reversed(need.fields):
-                    expression = field.resource.manager._expression_for_join(field.attribute, expression)
+                    expression = field.resource.manager._expression_for_join(
+                        field.attribute, expression
+                    )
 
             expressions.append(expression)
 
@@ -192,7 +202,9 @@ class PrincipalMixin(object):
 
         return query
 
-    def relation_instances(self, item, attribute, target_resource, page=None, per_page=None):
+    def relation_instances(
+        self, item, attribute, target_resource, page=None, per_page=None
+    ):
         query = getattr(item, attribute)
 
         if isinstance(query, InstrumentedList):
@@ -227,7 +239,9 @@ class PrincipalMixin(object):
 
 def principals(manager):
     if not issubclass(manager, RelationalManager):
-        raise RuntimeError("principals() only works with managers that inherit from RelationalManager")
+        raise RuntimeError(
+            "principals() only works with managers that inherit from RelationalManager"
+        )
 
     class PrincipalsManager(PrincipalMixin, manager):
         pass

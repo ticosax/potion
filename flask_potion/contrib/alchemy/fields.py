@@ -6,6 +6,7 @@ class InlineModel(Object):
     :param dict properties:
     :param model:
     """
+
     def __init__(self, properties, model, **kwargs):
         super(InlineModel, self).__init__(properties, **kwargs)
         self.model = model

@@ -1,5 +1,3 @@
-import unittest
-
 import peewee as pw
 from playhouse.fields import ManyToManyField
 
@@ -61,10 +59,12 @@ class PeeweeTestCase(BaseTestCase):
     def test_field_discovery(self):
         self.assertEqual(
             set(self.MachineResource.schema.fields.keys()),
-            {'$id', '$type', 'name', 'type', 'wattage'})
+            {'$id', '$type', 'name', 'type', 'wattage'},
+        )
         self.assertEqual(
             set(self.TypeResource.schema.fields.keys()),
-            {'$id', '$type', 'name', 'machines'})
+            {'$id', '$type', 'name', 'machines'},
+        )
         self.assertEqual(self.MachineResource.meta.name, 'machine')
         self.assertEqual(self.TypeResource.meta.name, 'type')
 
@@ -73,8 +73,7 @@ class PeeweeTestCase(BaseTestCase):
         self.assert400(response)
 
     def test_create_json_string(self):
-        response = self.client.post(
-            '/machine', data='invalid', force_json=True)
+        response = self.client.post('/machine', data='invalid', force_json=True)
         self.assert400(response)
 
     def test_conflict(self):
@@ -87,62 +86,67 @@ class PeeweeTestCase(BaseTestCase):
     def test_create(self):
         response = self.client.post('/type', data={})
         self.assert400(response)
-        self.assertEqual({
-            'errors': [
-                {
-                    'message': "'name' is a required property",
-                    'path': [],
-                    'validationOf': {
-                        'required': [
-                            'name'
-                        ]
+        self.assertEqual(
+            {
+                'errors': [
+                    {
+                        'message': "'name' is a required property",
+                        'path': [],
+                        'validationOf': {'required': ['name']},
                     }
-                }
-            ],
-            'message': 'Bad Request',
-            'status': 400
-        }, response.json)
+                ],
+                'message': 'Bad Request',
+                'status': 400,
+            },
+            response.json,
+        )
 
         response = self.client.post('/type', data={'name': 'x-ray'})
-        self.assertJSONEqual({
-            '$id': 1,
-            '$type': 'type',
-            'machines': [],
-            'name': 'x-ray'},
-            response.json)
+        self.assertJSONEqual(
+            {'$id': 1, '$type': 'type', 'machines': [], 'name': 'x-ray'}, response.json
+        )
 
         response = self.client.post(
-            '/machine', data={'name': 'Irradiator I', 'type': 1})
+            '/machine', data={'name': 'Irradiator I', 'type': 1}
+        )
         self.assert200(response)
-        self.assertJSONEqual({
-            '$id': 1,
-            '$type': 'machine',
-            'type': {'$ref': '/type/1'},
-            'wattage': None,
-            'name': 'Irradiator I'},
-            response.json)
+        self.assertJSONEqual(
+            {
+                '$id': 1,
+                '$type': 'machine',
+                'type': {'$ref': '/type/1'},
+                'wattage': None,
+                'name': 'Irradiator I',
+            },
+            response.json,
+        )
 
         response = self.client.post(
-            '/machine', data={'name': 'Sol IV', 'type': 1, 'wattage': 1.23e45})
+            '/machine', data={'name': 'Sol IV', 'type': 1, 'wattage': 1.23e45}
+        )
         self.assert200(response)
-        self.assertJSONEqual({
-            '$id': 2,
-            '$type': 'machine',
-            'type': {'$ref': '/type/1'},
-            'wattage': 1.23e45,
-            'name': 'Sol IV'},
-            response.json)
+        self.assertJSONEqual(
+            {
+                '$id': 2,
+                '$type': 'machine',
+                'type': {'$ref': '/type/1'},
+                'wattage': 1.23e45,
+                'name': 'Sol IV',
+            },
+            response.json,
+        )
 
         response = self.client.get('/type/1')
         self.assert200(response)
-        self.assertJSONEqual({
-            '$id': 1,
-            '$type': 'type',
-            'machines': [
-                {'$ref': '/machine/1'},
-                {'$ref': '/machine/2'}],
-            'name': 'x-ray'},
-            response.json)
+        self.assertJSONEqual(
+            {
+                '$id': 1,
+                '$type': 'type',
+                'machines': [{'$ref': '/machine/1'}, {'$ref': '/machine/2'}],
+                'name': 'x-ray',
+            },
+            response.json,
+        )
 
     def test_get(self):
         def type_(i):
@@ -150,12 +154,13 @@ class PeeweeTestCase(BaseTestCase):
                 '$id': i,
                 '$type': 'type',
                 'name': 'Type-{}'.format(i),
-                'machines': []}
+                'machines': [],
+            }
 
         for i in range(1, 10):
             response = self.client.post(
-                '/type',
-                data={'name': 'Type-{}'.format(i), 'machines': []})
+                '/type', data={'name': 'Type-{}'.format(i), 'machines': []}
+            )
             self.assert200(response)
             self.assertJSONEqual(type_(i), response.json)
 
@@ -165,17 +170,18 @@ class PeeweeTestCase(BaseTestCase):
 
             response = self.client.get('/type')
             self.assert200(response)
-            self.assertJSONEqual(
-                [type_(i) for i in range(1, i + 1)],
-                response.json)
+            self.assertJSONEqual([type_(i) for i in range(1, i + 1)], response.json)
 
             response = self.client.get('/type/{}'.format(i + 1))
             self.assert404(response)
-            self.assertJSONEqual({
-                'item': {'$id': i + 1, '$type': 'type'},
-                'message': 'Not Found',
-                'status': 404},
-                response.json)
+            self.assertJSONEqual(
+                {
+                    'item': {'$id': i + 1, '$type': 'type'},
+                    'message': 'Not Found',
+                    'status': 404,
+                },
+                response.json,
+            )
 
     def test_pagination(self):
         for i in range(1, 51):
@@ -197,77 +203,97 @@ class PeeweeTestCase(BaseTestCase):
         response = self.client.post('/type', data={'name': 'T2'})
         self.assert200(response)
 
-        response = self.client.post(
-            '/machine', data={'name': 'Robot', 'type': 1})
+        response = self.client.post('/machine', data={'name': 'Robot', 'type': 1})
         self.assert200(response)
-        self.assertJSONEqual({
-            '$id': 1,
-            '$type': 'machine',
-            'type': {'$ref': '/type/1'},
-            'wattage': None,
-            'name': 'Robot'},
-            response.json)
+        self.assertJSONEqual(
+            {
+                '$id': 1,
+                '$type': 'machine',
+                'type': {'$ref': '/type/1'},
+                'wattage': None,
+                'name': 'Robot',
+            },
+            response.json,
+        )
 
         response = self.client.patch('/machine/1', data={})
         self.assert200(response)
 
         response = self.client.patch('/machine/1', data={'wattage': 10000})
         self.assert200(response)
-        self.assertJSONEqual({
-            '$id': 1,
-            '$type': 'machine',
-            'type': {'$ref': '/type/1'},
-            'wattage': 10000,
-            'name': 'Robot'},
-            response.json)
+        self.assertJSONEqual(
+            {
+                '$id': 1,
+                '$type': 'machine',
+                'type': {'$ref': '/type/1'},
+                'wattage': 10000,
+                'name': 'Robot',
+            },
+            response.json,
+        )
 
-        response = self.client.patch(
-            '/machine/1', data={'type': {'$ref': '/type/2'}})
+        response = self.client.patch('/machine/1', data={'type': {'$ref': '/type/2'}})
         self.assert200(response)
-        self.assertJSONEqual({
-            '$id': 1,
-            '$type': 'machine',
-            'type': {'$ref': '/type/2'},
-            'wattage': 10000,
-            'name': 'Robot'},
-            response.json)
+        self.assertJSONEqual(
+            {
+                '$id': 1,
+                '$type': 'machine',
+                'type': {'$ref': '/type/2'},
+                'wattage': 10000,
+                'name': 'Robot',
+            },
+            response.json,
+        )
 
         response = self.client.patch('/machine/1', data={'type': None})
         self.assert400(response)
-        self.assertJSONEqual({
-            'errors': [{
-                'message': 'None is not valid under any of the given schemas',
-                'path': [
-                    'type'],
-                'validationOf': {
-                    'anyOf': [{
-                        'additionalProperties': False,
-                        'properties': {
-                            '$ref': {
-                                'pattern': '^\\/type\\/[^/]+$',
-                                'type': 'string'}},
-                            'type': 'object'}, {
-                                'type': 'integer'}]}}],
-            'message': 'Bad Request',
-            'status': 400},
-            response.json)
+        self.assertJSONEqual(
+            {
+                'errors': [
+                    {
+                        'message': 'None is not valid under any of the given schemas',
+                        'path': ['type'],
+                        'validationOf': {
+                            'anyOf': [
+                                {
+                                    'additionalProperties': False,
+                                    'properties': {
+                                        '$ref': {
+                                            'pattern': '^\\/type\\/[^/]+$',
+                                            'type': 'string',
+                                        }
+                                    },
+                                    'type': 'object',
+                                },
+                                {'type': 'integer'},
+                            ]
+                        },
+                    }
+                ],
+                'message': 'Bad Request',
+                'status': 400,
+            },
+            response.json,
+        )
 
         response = self.client.patch('/machine/1', data={'name': 'Foo'})
         self.assert200(response)
-        self.assertJSONEqual({
-            '$id': 1,
-            '$type': 'machine',
-            'type': {'$ref': '/type/2'},
-            'wattage': 10000,
-            'name': 'Foo'},
-            response.json)
+        self.assertJSONEqual(
+            {
+                '$id': 1,
+                '$type': 'machine',
+                'type': {'$ref': '/type/2'},
+                'wattage': 10000,
+                'name': 'Foo',
+            },
+            response.json,
+        )
 
     def test_delete(self):
         response = self.client.delete('/type/1')
         self.assert404(response)
 
-        response = self.client.post(
-            '/type', data={'name': 'Foo', 'machines': []})
+        response = self.client.post('/type', data={'name': 'Foo', 'machines': []})
         self.assert200(response)
 
         response = self.client.delete('/type/1')
@@ -286,8 +312,7 @@ class PeeweeRelationTestCase(BaseTestCase):
         self.api = Api(self.app)
 
         class User(db.Model):
-            parent = pw.ForeignKeyField('self', related_name='children',
-                                        null=True)
+            parent = pw.ForeignKeyField('self', related_name='children', null=True)
             name = pw.CharField(max_length=60, null=False)
 
         class Group(db.Model):
@@ -295,10 +320,7 @@ class PeeweeRelationTestCase(BaseTestCase):
             members = ManyToManyField(User, related_name='memberships')
 
         db.database.connect()
-        db.database.create_tables([
-            User,
-            Group,
-            Group.members.get_through_model()])
+        db.database.create_tables([User, Group, Group.members.get_through_model()])
 
         self.User = User
         self.Group = Group
@@ -325,10 +347,9 @@ class PeeweeRelationTestCase(BaseTestCase):
         self.api.add_resource(GroupResource)
 
     def tearDown(self):
-        self.db.database.drop_tables([
-            self.Group.members.get_through_model(),
-            self.Group,
-            self.User])
+        self.db.database.drop_tables(
+            [self.Group.members.get_through_model(), self.Group, self.User]
+        )
 
         if not self.db.database.is_closed():
             self.db.database.close()
@@ -336,26 +357,17 @@ class PeeweeRelationTestCase(BaseTestCase):
     def test_relationship_secondary(self):
         response = self.client.post('/group', data={'name': 'Foo'})
         self.assert200(response)
-        self.assertJSONEqual({
-            '$id': 1,
-            '$type': 'group',
-            'name': 'Foo'},
-            response.json)
+        self.assertJSONEqual({'$id': 1, '$type': 'group', 'name': 'Foo'}, response.json)
 
         response = self.client.post('/user', data={'name': 'Bar'})
         self.assert200(response)
-        self.assertJSONEqual({
-            '$id': 1,
-            '$type': 'user',
-            'name': 'Bar'},
-            response.json)
+        self.assertJSONEqual({'$id': 1, '$type': 'user', 'name': 'Bar'}, response.json)
 
         response = self.client.get('/group/1/members')
         self.assert200(response)
         self.assertJSONEqual([], response.json)
 
-        response = self.client.post(
-            '/group/1/members', data={'$ref': '/user/1'})
+        response = self.client.post('/group/1/members', data={'$ref': '/user/1'})
         self.assert200(response)
         self.assertJSONEqual({'$ref': '/user/1'}, response.json)
 
@@ -373,22 +385,13 @@ class PeeweeRelationTestCase(BaseTestCase):
     def test_relationship_post(self):
         response = self.client.post('/user', data={'name': 'Foo'})
         self.assert200(response)
-        self.assertJSONEqual({
-            '$id': 1,
-            '$type': 'user',
-            'name': 'Foo'},
-            response.json)
+        self.assertJSONEqual({'$id': 1, '$type': 'user', 'name': 'Foo'}, response.json)
 
         response = self.client.post('/user', data={'name': 'Bar'})
         self.assert200(response)
-        self.assertJSONEqual({
-            '$id': 2,
-            '$type': 'user',
-            'name': 'Bar'},
-            response.json)
+        self.assertJSONEqual({'$id': 2, '$type': 'user', 'name': 'Bar'}, response.json)
 
-        response = self.client.post(
-            '/user/1/children', data={'$ref': '/user/2'})
+        response = self.client.post('/user/1/children', data={'$ref': '/user/2'})
         self.assert200(response)
         self.assertJSONEqual({'$ref': '/user/2'}, response.json)
 
@@ -418,7 +421,8 @@ class PeeweeRelationTestCase(BaseTestCase):
             self.assert200(response)
             response = self.client.post(
                 '/user/1/children',
-                data={'$ref': '/user/{}'.format(response.json['$id'])})
+                data={'$ref': '/user/{}'.format(response.json['$id'])},
+            )
             self.assert200(response)
 
         response = self.client.get('/user/1/children')
@@ -426,12 +430,12 @@ class PeeweeRelationTestCase(BaseTestCase):
         self.assert200(response)
         self.assertEqual('48', response.headers.get('X-Total-Count'))
         self.assertJSONEqual(
-            [{'$ref': '/user/{}'.format(i)} for i in range(2, 22)],
-            response.json)
+            [{'$ref': '/user/{}'.format(i)} for i in range(2, 22)], response.json
+        )
 
         response = self.client.get('/user/1/children?page=3')
         self.assert200(response)
         self.assertEqual('48', response.headers.get('X-Total-Count'))
         self.assertJSONEqual(
-            [{'$ref': '/user/{}'.format(i)} for i in range(42, 50)],
-            response.json)
+            [{'$ref': '/user/{}'.format(i)} for i in range(42, 50)], response.json
+        )

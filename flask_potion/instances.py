@@ -15,7 +15,7 @@ class PaginationMixin(object):
 
     @cached_property
     def _pagination_types(self):
-        raise NotImplemented()
+        raise NotImplementedError()
 
     def format_response(self, data):
         if not isinstance(data, self._pagination_types):
@@ -36,15 +36,19 @@ class PaginationMixin(object):
         # TODO include query_params
 
         headers = {
-            'Link': ','.join(('<{0}?page={1}&per_page={2}>; rel="{3}"'.format(*link) for link in links)),
-            'X-Total-Count': data.total
+            'Link': ','.join(
+                (
+                    '<{0}?page={1}&per_page={2}>; rel="{3}"'.format(*link)
+                    for link in links
+                )
+            ),
+            'X-Total-Count': data.total,
         }
 
         return self.format(data.items), 200, headers
 
 
 class RelationInstances(PaginationMixin, ToMany):
-
     @cached_property
     def _pagination_types(self):
         return self.container.target.manager.PAGINATION_TYPES
@@ -56,6 +60,7 @@ class Instances(PaginationMixin, Schema, ResourceBound):
 
     Works like a field, but reads 'where' and 'sort' query string parameters as well as link headers.
     """
+
     query_params = ('where', 'sort')
 
     def rebind(self, resource):
@@ -78,7 +83,8 @@ class Instances(PaginationMixin, Schema, ResourceBound):
     @cached_property
     def _sort_fields(self):
         return {
-            name: field for name, field in self.resource.schema.readable_fields.items()
+            name: field
+            for name, field in self.resource.schema.readable_fields.items()
             if name in self._filters and self.resource.manager._is_sortable_field(field)
         }
 
@@ -90,7 +96,7 @@ class Instances(PaginationMixin, Schema, ResourceBound):
                 name: self._field_filters_schema(filters)
                 for name, filters in self._filters.items()
             },
-            "additionalProperties": False
+            "additionalProperties": False,
         }
 
     @cached_property
@@ -98,13 +104,15 @@ class Instances(PaginationMixin, Schema, ResourceBound):
         return {
             "type": "object",
             "properties": {  # FIXME switch to tuples
-                             name: {
-                                 "type": "boolean",
-                                 "description": "Sort by {} in descending order if 'true', ascending order if 'false'.".format(name)
-                             }
-                             for name, field in self._sort_fields.items()
+                name: {
+                    "type": "boolean",
+                    "description": "Sort by {} in descending order if 'true', ascending order if 'false'.".format(
+                        name
+                    ),
+                }
+                for name, field in self._sort_fields.items()
             },
-            "additionalProperties": False
+            "additionalProperties": False,
         }
 
     def schema(self):
@@ -113,25 +121,18 @@ class Instances(PaginationMixin, Schema, ResourceBound):
             "properties": {
                 "where": self._filter_schema,
                 "sort": self._sort_schema,
-                "page": {
-                    "type": "integer",
-                    "minimum": 1,
-                    "default": 1
-                },
+                "page": {"type": "integer", "minimum": 1, "default": 1},
                 "per_page": {
                     "type": "integer",
                     "minimum": 1,
                     "maximum": current_app.config['POTION_MAX_PER_PAGE'],
                     "default": current_app.config['POTION_DEFAULT_PER_PAGE'],
-                }
+                },
             },
-            "additionalProperties": True
+            "additionalProperties": True,
         }
 
-        response_schema = {
-            "type": "array",
-            "items": {"$ref": "#"}
-        }
+        response_schema = {"type": "array", "items": {"$ref": "#"}}
 
         return response_schema, request_schema
 
@@ -150,18 +151,20 @@ class Instances(PaginationMixin, Schema, ResourceBound):
         # TODO (implement in FieldSet too:) load values from request.args
         try:
             page = request.args.get('page', 1, type=int)
-            per_page = request.args.get('per_page', current_app.config['POTION_DEFAULT_PER_PAGE'], type=int)
+            per_page = request.args.get(
+                'per_page', current_app.config['POTION_DEFAULT_PER_PAGE'], type=int
+            )
             where = json.loads(request.args.get('where', '{}'))  # FIXME
-            sort = json.loads(request.args.get('sort', '{}'), object_pairs_hook=collections.OrderedDict)
+            sort = json.loads(
+                request.args.get('sort', '{}'),
+                object_pairs_hook=collections.OrderedDict,
+            )
         except ValueError:
             raise InvalidJSON()
 
-        result = self.convert({
-            "page": page,
-            "per_page": per_page,
-            "where": where,
-            "sort": sort
-        })
+        result = self.convert(
+            {"page": page, "per_page": per_page, "where": where, "sort": sort}
+        )
 
         result['where'] = tuple(self._convert_filters(result['where']))
         result['sort'] = tuple(self._convert_sort(result['sort']))
@@ -202,4 +205,4 @@ class Pagination(object):
     @classmethod
     def from_list(cls, items, page, per_page):
         start = per_page * (page - 1)
-        return Pagination(items[start:start + per_page], page, per_page, len(items))
+        return Pagination(items[start : start + per_page], page, per_page, len(items))

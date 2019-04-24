@@ -20,26 +20,30 @@ class ApiTestCase(BaseTestCase):
 
         response = self.client.get("/schema")
 
-        self.assertEqual({
-                             "$schema": "http://json-schema.org/draft-04/hyper-schema#",
-                             "properties": {
-                                 "book": {"$ref": "/book/schema#"}
-                             }
-                         }, response.json)
+        self.assertEqual(
+            {
+                "$schema": "http://json-schema.org/draft-04/hyper-schema#",
+                "properties": {"book": {"$ref": "/book/schema#"}},
+            },
+            response.json,
+        )
 
         response = self.client.get("/book/schema")
         self.assert200(response)
 
     def test_api_schema(self):
-        api = Api(self.app, title="Welcome to Foo API!", description="...")
+        Api(self.app, title="Welcome to Foo API!", description="...")
 
         response = self.client.get("/schema")
-        self.assertEqual({
-                             "$schema": "http://json-schema.org/draft-04/hyper-schema#",
-                             "title": "Welcome to Foo API!",
-                             "description": "...",
-                             "properties": {}
-                         }, response.json)
+        self.assertEqual(
+            {
+                "$schema": "http://json-schema.org/draft-04/hyper-schema#",
+                "title": "Welcome to Foo API!",
+                "description": "...",
+                "properties": {},
+            },
+            response.json,
+        )
 
     def test_api_prefix(self):
         api = Api(self.app, prefix='/api/v1')
@@ -65,28 +69,33 @@ class ApiTestCase(BaseTestCase):
 
         response = self.client.get("/api/v1/schema")
 
-        self.assertEqual({
-                             "$schema": "http://json-schema.org/draft-04/hyper-schema#",
-                             "properties": {
-                                 "book": {"$ref": "/api/v1/book/schema#"}
-                             }
-                         }, response.json)
+        self.assertEqual(
+            {
+                "$schema": "http://json-schema.org/draft-04/hyper-schema#",
+                "properties": {"book": {"$ref": "/api/v1/book/schema#"}},
+            },
+            response.json,
+        )
 
         response = self.client.get("/api/v1/book/schema")
         self.assert200(response)
-        self.assertEqual({
-                    "/api/v1/book",
-                    "/api/v1/book/schema",
-                    "/api/v1/book/genres",
-                    "/api/v1/book/{id}",
-                    "/api/v1/book/{id}/rating"
-                 }, {l['href'] for l in response.json['links']})
+        self.assertEqual(
+            {
+                "/api/v1/book",
+                "/api/v1/book/schema",
+                "/api/v1/book/genres",
+                "/api/v1/book/{id}",
+                "/api/v1/book/{id}/rating",
+            },
+            {l['href'] for l in response.json['links']},
+        )
 
     def test_schema_decoration(self):
         def is_teapot(fn):
             @wraps(fn)
             def wrapper(*args, **kwargs):
                 return '', 418, {}
+
             return wrapper
 
         api = Api(self.app, decorators=[is_teapot])
@@ -144,96 +153,77 @@ class ApiTestCase(BaseTestCase):
         response = self.client.get("/book/schema")
 
         self.maxDiff = None
-        self.assertEqual({
-                             "title": {
-                                 "type": "string"
-                             },
-                             "$uri": {
-                                 "type": "string",
-                                 'pattern': '^\\/book\\/[^/]+$',
-                                 "readOnly": True
-                             },
-                         }, response.json['properties'])
+        self.assertEqual(
+            {
+                "title": {"type": "string"},
+                "$uri": {
+                    "type": "string",
+                    'pattern': '^\\/book\\/[^/]+$',
+                    "readOnly": True,
+                },
+            },
+            response.json['properties'],
+        )
 
         response = self.client.post("/book", data={"title": "Foo"})
 
-        self.assertEqual({
-                             "$uri": "/book/1",
-                             "title": "Foo"
-                         }, response.json)
+        self.assertEqual({"$uri": "/book/1", "title": "Foo"}, response.json)
 
-        self.assertEqual({
-                             'id': 1,
-                             'name': 'Foo'
-                         }, BookResource.manager.read(1))
+        self.assertEqual({'id': 1, 'name': 'Foo'}, BookResource.manager.read(1))
 
         response = self.client.patch("/book/1", data={"title": "Bar"})
 
-        self.assertEqual({
-                             "$uri": "/book/1",
-                             "title": "Bar"
-                         }, response.json)
+        self.assertEqual({"$uri": "/book/1", "title": "Bar"}, response.json)
 
         self.client.post("/book", data={"title": "Bat"})
         self.client.post("/book", data={"title": "Foo"})
         response = self.client.get("/book")
 
-        self.assertEqual([
-                             {
-                                "$uri": "/book/1",
-                                 "title": "Bar"
-                             },
-                             {
-                                "$uri": "/book/2",
-                                 "title": "Bat"
-                             },
-                             {
-                                "$uri": "/book/3",
-                                 "title": "Foo"
-                             }
-                         ], response.json)
+        self.assertEqual(
+            [
+                {"$uri": "/book/1", "title": "Bar"},
+                {"$uri": "/book/2", "title": "Bat"},
+                {"$uri": "/book/3", "title": "Foo"},
+            ],
+            response.json,
+        )
 
         response = self.client.get('/book?where={"title": {"$startswith": "B"}}')
 
-        self.assertEqual([
-                             {
-                                 "$uri": "/book/1",
-                                 "title": "Bar"
-                             },
-                             {
-                                 "$uri": "/book/2",
-                                 "title": "Bat"
-                             }
-                         ], response.json)
+        self.assertEqual(
+            [{"$uri": "/book/1", "title": "Bar"}, {"$uri": "/book/2", "title": "Bat"}],
+            response.json,
+        )
 
         response = self.client.delete("/book/2")
         self.assertStatus(response, 204)
 
         response = self.client.patch("/book/1", data={"title": None})
         self.assert400(response)
-        self.assertEqual({
-                             'status': 400,
-                             'message': 'Bad Request',
-                             'errors': [
-                                 {
-                                     'path': ['title'],
-                                     'validationOf': {'type': 'string'},
-                                     'message': "None is not of type 'string'"
-                                 }
-                             ],
-                         }, response.json)
+        self.assertEqual(
+            {
+                'status': 400,
+                'message': 'Bad Request',
+                'errors': [
+                    {
+                        'path': ['title'],
+                        'validationOf': {'type': 'string'},
+                        'message': "None is not of type 'string'",
+                    }
+                ],
+            },
+            response.json,
+        )
 
         self.app.debug = False
 
         response = self.client.patch("/book/1", data={"title": None})
         self.assert400(response)
-        self.assertEqual({
-                             'status': 400,
-                             'message': 'Bad Request',
-                             'errors': [
-                                 {
-                                     'path': ['title'],
-                                     'validationOf': {'type': 'string'}
-                                 }
-                             ],
-                         }, response.json)
+        self.assertEqual(
+            {
+                'status': 400,
+                'message': 'Bad Request',
+                'errors': [{'path': ['title'], 'validationOf': {'type': 'string'}}],
+            },
+            response.json,
+        )

@@ -1,6 +1,6 @@
 from flask_potion.routes import Route
 from flask_potion import fields, Api
-from flask_potion.resource import ModelResource, Resource
+from flask_potion.resource import Resource
 from tests import BaseTestCase
 
 
@@ -42,18 +42,14 @@ class MixinTestCase(BaseTestCase):
 
         data, code, headers = FooResource().described_by()
 
-        self.assertEqual({
-                             "field_a": {
-                                 "type": "string"
-                             },
-                             "field_b": {
-                                 "type": "string"
-                             },
-                             "field_c": {
-                                 "readOnly": True,
-                                 "type": "integer"
-                             }
-                         }, data["properties"])
+        self.assertEqual(
+            {
+                "field_a": {"type": "string"},
+                "field_b": {"type": "string"},
+                "field_c": {"readOnly": True, "type": "integer"},
+            },
+            data["properties"],
+        )
 
         data, code, headers = BazResource().described_by()
         data, code, headers = BatResource().described_by()

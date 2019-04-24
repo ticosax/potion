@@ -13,12 +13,23 @@ from flask_potion.utils import get_value
 from flask_potion.exceptions import ItemNotFound, BackendConflict
 from flask_potion.instances import Pagination
 from flask_potion.manager import Manager
-from flask_potion.signals import before_create, before_update, after_update, before_delete, after_delete, after_create, \
-    before_add_to_relation, after_remove_from_relation, before_remove_from_relation, after_add_to_relation
+from flask_potion.signals import (
+    before_create,
+    before_update,
+    after_update,
+    before_delete,
+    after_delete,
+    after_create,
+    before_add_to_relation,
+    after_remove_from_relation,
+    before_remove_from_relation,
+    after_add_to_relation,
+)
 from flask_potion import fields
 
 
 # TODO: more elaborate field that validates and returns ObjectId
+
 
 class custom_fields:
     class ObjectId(fields.String):
@@ -44,12 +55,12 @@ class custom_fields:
 
 MONGO_REFERENCE_FIELD_TYPES = (
     mongo_fields.ReferenceField,
-    mongo_fields.CachedReferenceField
+    mongo_fields.CachedReferenceField,
 )
 
 MONGO_EMBEDDED_FIELD_TYPES = (
     mongo_fields.EmbeddedDocumentField,
-    mongo_fields.GenericEmbeddedDocumentField
+    mongo_fields.GenericEmbeddedDocumentField,
 )
 
 MONGO_FIELDS_MAPPING = {
@@ -60,7 +71,7 @@ MONGO_FIELDS_MAPPING = {
     mongo_fields.LongField: fields.Number,
     mongo_fields.BinaryField: fields.List,
     mongo_fields.DateTimeField: fields.Date,
-    mongo_fields.ComplexDateTimeField: fields.DateTime
+    mongo_fields.ComplexDateTimeField: fields.DateTime,
 }
 
 
@@ -71,6 +82,7 @@ class MongoEngineManager(Manager):
     Expects that ``Meta.model`` contains a :class:`mongoengine.Document`.
 
     """
+
     FILTER_NAMES = FILTER_NAMES
     FILTERS_BY_TYPE = FILTERS_BY_TYPE
     PAGINATION_TYPES = (Pagination, MEPagination)
@@ -88,7 +100,9 @@ class MongoEngineManager(Manager):
 
         # resource name: use model collection's name if not set explicitly
         if not hasattr(resource.Meta, 'name'):
-            meta['name'] = model._meta.get('collection', model.__class__.__name__).lower()
+            meta['name'] = model._meta.get(
+                'collection', model.__class__.__name__
+            ).lower()
 
         fs = resource.schema
         include_fields = meta.get('include_fields', None)
@@ -98,9 +112,11 @@ class MongoEngineManager(Manager):
         pre_declared_fields = {f.attribute or k for k, f in fs.fields.items()}
 
         for name, column in model._fields.items():
-            if (include_fields and name in include_fields) or \
-                    (exclude_fields and name not in exclude_fields) or \
-                    not (include_fields or exclude_fields):
+            if (
+                (include_fields and name in include_fields)
+                or (exclude_fields and name not in exclude_fields)
+                or not (include_fields or exclude_fields)
+            ):
 
                 if column.primary_key:
                     continue
@@ -108,7 +124,9 @@ class MongoEngineManager(Manager):
                     continue
                 if isinstance(column, MONGO_REFERENCE_FIELD_TYPES):
                     continue
-                if isinstance(column, mongo_fields.ListField) and isinstance(column.field, MONGO_REFERENCE_FIELD_TYPES):
+                if isinstance(column, mongo_fields.ListField) and isinstance(
+                    column.field, MONGO_REFERENCE_FIELD_TYPES
+                ):
                     continue
 
                 io = "rw"
@@ -117,7 +135,9 @@ class MongoEngineManager(Manager):
                 elif name in write_only_fields:
                     io = "w"
 
-                field_instance = self._get_field_from_mongoengine_type(column, io=io, attribute=name)
+                field_instance = self._get_field_from_mongoengine_type(
+                    column, io=io, attribute=name
+                )
 
                 if "w" in io and not (column.null or column.default is not None):
                     fs.required.add(name)
@@ -136,13 +156,15 @@ class MongoEngineManager(Manager):
         if isinstance(field, mongo_fields.ListField):
             field_class = fields.List
             args = (self._get_field_from_mongoengine_type(field.field),)
-        elif isinstance(field, MONGO_EMBEDDED_FIELD_TYPES + MONGO_REFERENCE_FIELD_TYPES):
+        elif isinstance(
+            field, MONGO_EMBEDDED_FIELD_TYPES + MONGO_REFERENCE_FIELD_TYPES
+        ):
             field_class = custom_fields.EmbeddedField
             model = field.document_type
             properties = {}
             for prop, ref_field in model._fields.items():
                 properties[prop] = self._get_field_from_mongoengine_type(ref_field)
-            args = (model, properties,)
+            args = (model, properties)
         elif isinstance(field, mongo_fields.DictField):
             field_class = fields.Object
             if field.field is not None:
@@ -164,7 +186,10 @@ class MongoEngineManager(Manager):
             try:
                 field_class = MONGO_FIELDS_MAPPING[type(field)]
             except KeyError:
-                raise TypeError("%s not supported (use %s)" % (type(field), str(list(MONGO_FIELDS_MAPPING.keys()))))
+                raise TypeError(
+                    "%s not supported (use %s)"
+                    % (type(field), str(list(MONGO_FIELDS_MAPPING.keys())))
+                )
 
         kwargs['nullable'] = field.null
         kwargs['default'] = field.default
@@ -187,7 +212,9 @@ class MongoEngineManager(Manager):
             else:
                 yield "+%s" % attribute
 
-    def relation_instances(self, item, attribute, target_resource, page=None, per_page=None):
+    def relation_instances(
+        self, item, attribute, target_resource, page=None, per_page=None
+    ):
         query = getattr(item, attribute)
         if page and per_page:
             return Pagination.from_list(query, page, per_page)
@@ -195,13 +222,19 @@ class MongoEngineManager(Manager):
             return query.all()
 
     def relation_add(self, item, attribute, target_resource, target_item):
-        before_add_to_relation.send(self.resource, item=item, attribute=attribute, child=target_item)
+        before_add_to_relation.send(
+            self.resource, item=item, attribute=attribute, child=target_item
+        )
         getattr(item, attribute).append(target_item)
         item.save()
-        after_add_to_relation.send(self.resource, item=item, attribute=attribute, child=target_item)
+        after_add_to_relation.send(
+            self.resource, item=item, attribute=attribute, child=target_item
+        )
 
     def relation_remove(self, item, attribute, target_resource, target_item):
-        before_remove_from_relation.send(self.resource, item=item, attribute=attribute, child=target_item)
+        before_remove_from_relation.send(
+            self.resource, item=item, attribute=attribute, child=target_item
+        )
 
         try:
             getattr(item, attribute).remove(target_item)
@@ -209,10 +242,14 @@ class MongoEngineManager(Manager):
             pass
         else:
             item.save()
-            after_remove_from_relation.send(self.resource, item=item, attribute=attribute, child=target_item)
+            after_remove_from_relation.send(
+                self.resource, item=item, attribute=attribute, child=target_item
+            )
 
     def paginated_instances(self, page, per_page, where=None, sort=None):
-        return self.instances(where=where, sort=sort).paginate(page=page, per_page=per_page)
+        return self.instances(where=where, sort=sort).paginate(
+            page=page, per_page=per_page
+        )
 
     def instances(self, where=None, sort=None):
         query = self.model.objects
@@ -259,9 +296,10 @@ class MongoEngineManager(Manager):
 
     def update(self, item, changes, commit=True):
         actual_changes = {
-            key: value for key, value in changes.items()
+            key: value
+            for key, value in changes.items()
             if get_value(key, item, None) != value
-            }
+        }
 
         try:
             before_update.send(self.resource, item=item, changes=actual_changes)
