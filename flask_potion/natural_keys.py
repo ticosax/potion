@@ -1,5 +1,3 @@
-import re
-
 import six
 from werkzeug.utils import cached_property
 from .filters import Condition
@@ -7,7 +5,7 @@ from .filters import Condition
 from .schema import Schema
 from .reference import ResourceBound
 from .exceptions import ItemNotFound
-from .utils import route_from, get_value
+from .utils import route_from, get_value, compat_escape
 
 
 class Key(Schema, ResourceBound):
@@ -36,7 +34,7 @@ class RefKey(Key):
             "properties": {
                 "$ref": {
                     "type": "string",
-                    "pattern": "^{}\/[^/]+$".format(re.escape(self.resource.route_prefix))
+                    "pattern": r"^{}\/[^/]+$".format(compat_escape(self.resource.route_prefix))
                 }
                 # TODO consider replacing with {$type: foo, $value: 123}
             },

@@ -1,13 +1,12 @@
 import calendar
 from datetime import datetime
-import re
 
 import aniso8601
 from flask import current_app, request
 import six
 from werkzeug.utils import cached_property
 
-from flask_potion.utils import get_value, route_from
+from flask_potion.utils import get_value, route_from, compat_escape
 from flask_potion.reference import ResourceReference, ResourceBound, _bind_schema
 from flask_potion.schema import Schema
 
@@ -780,7 +779,7 @@ class ItemUri(Raw):
         self.target_reference = ResourceReference(resource)
         super(ItemUri, self).__init__(lambda: {
             "type": "string",
-            "pattern": "^{}\/[^/]+$".format(re.escape(self.target.route_prefix))
+            "pattern": r"^{}\/[^/]+$".format(compat_escape(self.target.route_prefix))
         }, io="r", attribute=attribute)
 
     @cached_property
