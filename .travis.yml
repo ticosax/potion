@@ -8,6 +8,9 @@ matrix:
     - python: "3.5"
     - python: "3.6"
     - python: "3.7"
+      env: TOXENV=py37
+    - python: "3.7"
+      env: TOXENV=py37-qa
 install:
     - pip install tox-travis coveralls
 script: tox
