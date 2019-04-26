@@ -269,21 +269,20 @@ class FieldSet(Schema, ResourceBound):
             if key in result:
                 continue
 
-            value = None
-
             try:
                 value = object_[key]
-                value = field.convert(value, validate=False)
             except KeyError:
                 if patchable:
                     continue
 
                 if field.default is not None:
                     value = field.default
-                elif field.nullable:
+                elif field.nullable and key in self.required and not strict:
                     value = None
-                elif key not in self.required and not strict:
-                    value = None
+                else:
+                    continue
+            else:
+                value = field.convert(value, validate=False)
 
             result[field.attribute or key] = value
         return result
