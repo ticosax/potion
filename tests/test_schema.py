@@ -1,4 +1,3 @@
-import unittest
 from unittest import TestCase
 from flask import Flask, request, Request
 from flask_potion import fields, Resource
@@ -77,15 +76,12 @@ class SchemaTestCase(TestCase):
                 cx.exception.as_dict(),
             )
 
-    @unittest.SkipTest
     def test_schema_class_parse_request(self):
         pass
 
-    @unittest.SkipTest
     def test_schema_class_format_response(self):
         pass
 
-    @unittest.SkipTest
     def test_fieldset_schema(self):
         pass
 
@@ -172,66 +168,5 @@ class SchemaTestCase(TestCase):
 
         self.assertEqual({"name", "secret"}, set(fs.create['required']))
 
-    @unittest.SkipTest
     def test_fieldset_format_response(self):
         pass
-
-    def test_field_required_and_nullable_without_default_combination(self):
-
-        field_set = FieldSet(
-            {'a': fields.String(nullable=True)}, required_fields=('a',)
-        )
-        self.assertEqual(field_set.convert({'a': 'a'}), {'a': 'a'})
-        self.assertEqual(field_set.convert({'a': None}), {'a': None})
-        with self.assertRaises(ValidationError):
-            field_set.convert({})
-
-    def test_field_required_and_non_nullable_without_default_combination(self):
-
-        field_set = FieldSet({'a': fields.String()}, required_fields=('a',))
-        self.assertEqual(field_set.convert({'a': 'a'}), {'a': 'a'})
-        with self.assertRaises(ValidationError):
-            field_set.convert({'a': None})
-        with self.assertRaises(ValidationError):
-            field_set.convert({})
-
-    def test_field_required_and_nullable_with_default_combination(self):
-
-        field_set = FieldSet(
-            {'a': fields.String(nullable=True, default='default')},
-            required_fields=('a',),
-        )
-        self.assertEqual(field_set.convert({'a': 'a'}), {'a': 'a'})
-        self.assertEqual(field_set.convert({'a': None}), {'a': None})
-        self.assertEqual(field_set.convert({'a': 'default'}), {'a': 'default'})
-
-    def test_field_required_and_non_nullable_with_default_combination(self):
-
-        field_set = FieldSet(
-            {'a': fields.String(default='default')}, required_fields=('a',)
-        )
-        self.assertEqual(field_set.convert({'a': 'a'}), {'a': 'a'})
-        with self.assertRaises(ValidationError):
-            field_set.convert({'a': None})
-        self.assertEqual(field_set.convert({'a': 'default'}), {'a': 'default'})
-
-    def test_field_non_required_nullable_without_default(self):
-        field_set = FieldSet({'a': fields.String(nullable=True)})
-        self.assertEqual(field_set.convert({'a': 'a'}), {'a': 'a'})
-        self.assertEqual(field_set.convert({'a': None}), {'a': None})
-        self.assertEqual(field_set.convert({}), {})
-
-    def test_field_non_required_non_nullable_without_default(self):
-        field_set = FieldSet({'a': fields.String()})
-        self.assertEqual(field_set.convert({'a': 'a'}), {'a': 'a'})
-        with self.assertRaises(ValidationError):
-            field_set.convert({'a': None})
-        with self.assertRaises(ValidationError):
-            field_set.convert({})
-
-    def test_field_non_required_non_nullable_with_default(self):
-        field_set = FieldSet({'a': fields.String(default='default')})
-        self.assertEqual(field_set.convert({'a': 'a'}), {'a': 'a'})
-        with self.assertRaises(ValidationError):
-            field_set.convert({'a': None})
-        self.assertEqual(field_set.convert({'a': 'default'}), {'a': 'default'})
